@@ -102,16 +102,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>EnableAllWarnings</WarningLevel>
-      <Optimization>MinSpace</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,6 +143,8 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Users\frank\source\repos\Music\Music\ffmpeg;C:\Users\frank\source\repos\Music\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -158,7 +158,96 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="discord\achievement_manager.cpp" />
+    <ClCompile Include="discord\activity_manager.cpp" />
+    <ClCompile Include="discord\application_manager.cpp" />
+    <ClCompile Include="discord\core.cpp" />
+    <ClCompile Include="discord\image_manager.cpp" />
+    <ClCompile Include="discord\lobby_manager.cpp" />
+    <ClCompile Include="discord\network_manager.cpp" />
+    <ClCompile Include="discord\overlay_manager.cpp" />
+    <ClCompile Include="discord\relationship_manager.cpp" />
+    <ClCompile Include="discord\storage_manager.cpp" />
+    <ClCompile Include="discord\store_manager.cpp" />
+    <ClCompile Include="discord\types.cpp" />
+    <ClCompile Include="discord\user_manager.cpp" />
+    <ClCompile Include="discord\voice_manager.cpp" />
     <ClCompile Include="Source.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="discord\achievement_manager.h" />
+    <ClInclude Include="discord\activity_manager.h" />
+    <ClInclude Include="discord\application_manager.h" />
+    <ClInclude Include="discord\core.h" />
+    <ClInclude Include="discord\discord.h" />
+    <ClInclude Include="discord\event.h" />
+    <ClInclude Include="discord\ffi.h" />
+    <ClInclude Include="discord\image_manager.h" />
+    <ClInclude Include="discord\lobby_manager.h" />
+    <ClInclude Include="discord\network_manager.h" />
+    <ClInclude Include="discord\overlay_manager.h" />
+    <ClInclude Include="discord\relationship_manager.h" />
+    <ClInclude Include="discord\storage_manager.h" />
+    <ClInclude Include="discord\store_manager.h" />
+    <ClInclude Include="discord\types.h" />
+    <ClInclude Include="discord\user_manager.h" />
+    <ClInclude Include="discord\voice_manager.h" />
+    <ClInclude Include="ffmpeg\AudioFormatConverter.h" />
+    <ClInclude Include="ffmpeg\CodecDeducer.h" />
+    <ClInclude Include="ffmpeg\Codecs\AudioCodec.h" />
+    <ClInclude Include="ffmpeg\Codecs\Codec.h" />
+    <ClInclude Include="ffmpeg\Codecs\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\Codecs\H264NVEncCodec.h" />
+    <ClInclude Include="ffmpeg\Codecs\H265NVEncCodec.h" />
+    <ClInclude Include="ffmpeg\Codecs\JPGCodec.h" />
+    <ClInclude Include="ffmpeg\Codecs\PNGCodec.h" />
+    <ClInclude Include="ffmpeg\Codecs\VideoCodec.h" />
+    <ClInclude Include="ffmpeg\Codecs\VP9Codec.h" />
+    <ClInclude Include="ffmpeg\ConvertedAudioProcessor.h" />
+    <ClInclude Include="ffmpeg\Demuxing\AudioInputStream.h" />
+    <ClInclude Include="ffmpeg\Demuxing\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\Demuxing\InputStream.h" />
+    <ClInclude Include="ffmpeg\Demuxing\StreamData.h" />
+    <ClInclude Include="ffmpeg\Demuxing\VideoInputStream.h" />
+    <ClInclude Include="ffmpeg\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\ffmpegcpp.h" />
+    <ClInclude Include="ffmpeg\FFmpegException.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\AudioEncoder.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\AudioFilter.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\AudioFrameSink.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\Filter.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\FrameSink.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\FrameSinkStream.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\FrameWriter.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\OneInputFrameSink.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\VideoEncoder.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\VideoFilterInput.h" />
+    <ClInclude Include="ffmpeg\Frame Sinks\VideoFrameSink.h" />
+    <ClInclude Include="ffmpeg\FrameContainer.h" />
+    <ClInclude Include="ffmpeg\Info\AudioStreamInfo.h" />
+    <ClInclude Include="ffmpeg\Info\ContainerInfo.h" />
+    <ClInclude Include="ffmpeg\Info\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\Info\VideoStreamInfo.h" />
+    <ClInclude Include="ffmpeg\Muxing\AudioOutputStream.h" />
+    <ClInclude Include="ffmpeg\Muxing\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\Muxing\Muxer.h" />
+    <ClInclude Include="ffmpeg\Muxing\OutputStream.h" />
+    <ClInclude Include="ffmpeg\Muxing\VideoOutputStream.h" />
+    <ClInclude Include="ffmpeg\OpenCodec.h" />
+    <ClInclude Include="ffmpeg\Sources\Demuxer.h" />
+    <ClInclude Include="ffmpeg\Sources\EncodedFileSource.h" />
+    <ClInclude Include="ffmpeg\Sources\ffmpeg.h" />
+    <ClInclude Include="ffmpeg\Sources\InputSource.h" />
+    <ClInclude Include="ffmpeg\Sources\RawAudioDataSource.h" />
+    <ClInclude Include="ffmpeg\Sources\RawAudioFileSource.h" />
+    <ClInclude Include="ffmpeg\Sources\RawVideoDataSource.h" />
+    <ClInclude Include="ffmpeg\Sources\RawVideoFileSource.h" />
+    <ClInclude Include="ffmpeg\std.h" />
+    <ClInclude Include="ffmpeg\VideoFormatConverter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="discord_game_sdk.dll.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
