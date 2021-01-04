@@ -16,7 +16,7 @@
 #include "discord/discord.h"
 #include "ffmpeg/ffmpegcpp.h"
 
-#define volume 0.1
+#define volume "volume=0.1"
 
 struct DiscordState
 {
@@ -417,7 +417,7 @@ int main()
 				ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
 				ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
 				ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter(("volume=" + std::to_string(volume)).c_str(), encoder);
+				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter(volume, encoder);
 				/*int rawAudioSampleRate = 48000;
 				int rawAudioChannels = 2;
 				ffmpegcpp::RawAudioFileSource* audioFile = new ffmpegcpp::RawAudioFileSource(narrowstr.c_str(), "mp3", rawAudioSampleRate, rawAudioChannels, encoder);*/
@@ -445,7 +445,6 @@ int main()
 					str.push_back(tempstr[k]);
 				}
 			}
-		}
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
 			std::string s(name.begin(), name.end());
 			std::cout << "Now Playing: " << s << std::endl;
