@@ -377,7 +377,7 @@ int main()
 					ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
 					ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
 					ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-					ffmpegcpp::Filter* filter = new ffmpegcpp::Filter("volume=0.2", encoder);
+					ffmpegcpp::Filter* filter = new ffmpegcpp::Filter("volume=0.1", encoder);
 					/*int rawAudioSampleRate = 48000;
 					int rawAudioChannels = 2;
 					ffmpegcpp::RawAudioFileSource* audioFile = new ffmpegcpp::RawAudioFileSource(narrowstr.c_str(), "mp3", rawAudioSampleRate, rawAudioChannels, encoder);*/
