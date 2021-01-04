@@ -290,7 +290,7 @@ int main()
 	fin.close();
 	if (path == L"")
 	{
-		std::cout << "What folder are your songs located in?" << std::endl;
+		std::cout << "What folder are your songs located in? [Or put the path in the \"path\" file in the sources dir]" << std::endl;
 		std::getline(std::wcin, path);
 		fout.open("path");
 		fout << path << std::endl;
