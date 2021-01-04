@@ -176,99 +176,6 @@ bool getdiscord()
 	return false;
 }
 
-void play(std::wstring filepath)
-{
-	if (!discordstarted)
-	{
-		if (getdiscord())
-		{
-			startdiscord();
-		}
-	}
-	PlaySoundW(filepath.c_str(), NULL, SND_SYNC);
-	doneplaying = true;
-}
-
-void waitforkey()
-{
-	while (true)
-	{
-		GetAsyncKeyState(176);
-		GetAsyncKeyState(177);
-		GetAsyncKeyState(179);
-		if (GetAsyncKeyState(176) != 0)
-		{
-			//
-		}
-		if (GetAsyncKeyState(177) != 0)
-		{
-			//
-		}
-		if (GetAsyncKeyState(179) != 0)
-		{
-			while (GetAsyncKeyState(179) != 0);
-			/*HANDLE h = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadid);
-			if (!suspended)
-			{
-				SuspendThread(h);
-			}
-			else
-			{
-				ResumeThread(h);
-			}*/
-			HANDLE hThreadSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-			THREADENTRY32 thread;
-			thread.dwSize = sizeof(THREADENTRY32);
-			Thread32First(hThreadSnapshot, &thread);
-			bool tempsus = suspended;
-			suspendedthreads.clear();
-			do
-			{
-				if (thread.th32OwnerProcessID == GetCurrentProcessId() && thread.th32ThreadID != GetCurrentThreadId() && thread.th32ThreadID != threadid && thread.th32ThreadID != mainthreadid)
-				{
-					HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, thread.th32ThreadID);
-					if (!suspended)
-					{
-						SuspendThread(hThread);
-						tempsus = true;
-						suspendedthreads.insert(hThread);
-						SetConsoleTitleW(L"PAUSED");
-						system("CLS");
-						std::string s(name.begin(), name.end());
-						std::cout << "PAUSED: " << s << std::endl;
-					}
-					else if (suspendedthreads.find(hThread) == suspendedthreads.end())
-					{
-						ResumeThread(hThread);
-						tempsus = false;
-						SetConsoleTitleW(name.c_str());
-						system("CLS");
-						std::string s(name.begin(), name.end());
-						std::cout << "Now Playing: " << s << std::endl;
-					}
-					CloseHandle(hThread);
-				}
-			} while (Thread32Next(hThreadSnapshot, &thread));
-			CloseHandle(hThreadSnapshot);
-			suspended = tempsus;
-		}
-		Sleep(1);
-		if (doneplaying)
-		{
-			return;
-		}
-	}
-}
-
-void deleteused(std::wstring filepath)
-{
-	if (filepath != L"")
-	{
-		Sleep(1000);
-		DeleteFileW(filepath.c_str());
-	}
-}
-
 int main()
 {
 	SetConsoleTitle("Music");
@@ -361,6 +268,7 @@ int main()
 			name.erase(name.end() - 4, name.end());
 			std::string narrowstr, tempstr;
 			tempstr.clear();
+			narrowstr.clear();
 			if (!(str[str.length() - 1] == 'v' && str[str.length() - 2] == 'a' && str[str.length() - 3] == 'w' && str[str.length() - 4] == '.'))
 			{
 				int format = -1;
@@ -433,6 +341,7 @@ int main()
 				delete codec;
 				delete encoder;
 				delete audioFile;
+				delete filter;
 				system("CLS");
 				name.clear();
 				for (int k = 0; k < narrowstr.length() - 4; k++)
@@ -448,46 +357,100 @@ int main()
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
 			std::string s(name.begin(), name.end());
 			std::cout << "Now Playing: " << s << std::endl;
-			suspended = false;
+			std::clock_t start = clock();
+			narrowstr.clear();
+			for (int j = 0; j < str.length(); j++)
+			{
+				narrowstr.push_back(str[j]);
+			}
+			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
+			PlaySoundW(str.c_str(), NULL, SND_ASYNC);
+			WIN32_FIND_DATAW lpfinddata;
+			GetAsyncKeyState(179);
+			for (int j = 0; j < info.durationInSeconds * 10; j++)
+			{
+				Sleep(100);
+				if (GetAsyncKeyState(179))
+				{
+					PlaySoundW(NULL, NULL, SND_ASYNC);
+					clock_t current = clock();
+					SetConsoleTitleW(L"PAUSED");
+					std::string s(name.begin(), name.end());
+					std::cout << "PAUSED: " << s << std::endl;
+					while (GetAsyncKeyState(179))
+					{
+						Sleep(1);
+					}
+					tempstr = std::string(str.begin(), str.end());
+					ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
+					ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
+					ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
+					ffmpegcpp::Filter* filter;
+					if (name[name.length() - 1] == 'v' && name[name.length() - 2] == 'a' && name[name.length() - 1] == 'w')
+					{
+						filter = new ffmpegcpp::Filter("volume=1", encoder);
+					}
+					else
+					{
+						filter = new ffmpegcpp::Filter(volume, encoder);
+					}
+					std::string trimfilter = "atrim=start=";
+					trimfilter += std::to_string((current - start) / 1000.0);
+					ffmpegcpp::Filter* filter2 = new ffmpegcpp::Filter(trimfilter.c_str(), filter);
+					ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
+					audioFile->DecodeBestAudioStream(filter2);
+					audioFile->PreparePipeline();
+					while (!audioFile->IsDone())
+					{
+						audioFile->Step();
+					}
+					muxer->Close();
+					delete muxer;
+					delete codec;
+					delete encoder;
+					delete audioFile;
+					delete filter;
+					delete filter2;
+					while (!GetAsyncKeyState(179))
+					{
+						Sleep(1);
+					}
+					while (GetAsyncKeyState(179))
+					{
+						Sleep(1);
+					}
+					demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+					info = demuxer->GetInfo();
+					start = clock() - current + start;
+					PlaySoundW(str.c_str(), NULL, SND_ASYNC);
+					SetConsoleTitleW(name.c_str());
+					s = std::string(name.begin(), name.end());
+					std::cout << "Now Playing: " << s << std::endl;
+				}
+				if (GetAsyncKeyState(177))
+				{
+					PlaySoundW(NULL, NULL, SND_ASYNC);
+					while (GetAsyncKeyState(177))
+					{
+						Sleep(1);
+					}
+					break;
+				}
+			}
+			delete demuxer;
+			/*suspended = false;
 			doneplaying = false;
 			t = std::thread(play, str);
 			t2 = std::thread(waitforkey);
 			t3 = std::thread(deleteused, str);
 			t.join();
 			t2.join();
-			t3.join();
+			t3.join();*/
 			if (next != -2)
 			{
 				next = -1;
 			}
-			/*str = "powershell Add-Type -AssemblyName presentationCore; $wmplayer = New-Object System.Windows.Media.MediaPlayer; $wmplayer.Open(";
-			str += v[next];
-			str += "); Start-Sleep 1; $duration = $wmplayer.NaturalDuration.TimeSpan.TotalSeconds; $wmplayer.Volume = 0.1; $wmplayer.Play(); Start-Sleep $duration; $wmplayer.Stop(); $wmplayer.Close()";
-			c = str.c_str();
-			temp = v[next];
-			name.clear();
-			for (int i = temp.length() - 2; i >= 0; i--)
-			{
-				if (temp[i] == '\\')
-				{
-					break;
-				}
-				name.insert(name.begin(), temp[i]);
-			}
-			std::cout << "Now Playing: " << name << std::endl;
-			fout.open("cursong");
-			fout << name << std::endl;
-			fout.close();
-			thyme = clock();
-			system(c);
-			system("CLS");
-			next = -1;
-			Sleep(32);
-			if (GetAsyncKeyState(7) != 0)
-			{
-				SendInput(1, &input, sizeof(INPUT));
-				next = 1;
-			}*/
 		}
 	}
 }

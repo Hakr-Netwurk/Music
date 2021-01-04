@@ -1,5 +1,6 @@
 .vs
 Music.zip
+x64/Debug
 x64/Release/*.dll
 x64/Release/path
 Music/path

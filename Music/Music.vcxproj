@@ -157,8 +157,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="avcodec-58.dll" />
+    <None Include="avdevice-58.dll" />
+    <None Include="avfilter-7.dll" />
+    <None Include="avformat-58.dll" />
+    <None Include="avutil-56.dll" />
+    <None Include="discord_game_sdk.dll" />
     <None Include="md-styles.css" />
+    <None Include="postproc-55.dll" />
     <None Include="README.md" />
+    <None Include="swresample-3.dll" />
+    <None Include="swscale-5.dll" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="discord\achievement_manager.cpp" />
@@ -251,6 +260,7 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="discord_game_sdk.dll.lib" />
+    <Library Include="ffmpeg-cpp.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
