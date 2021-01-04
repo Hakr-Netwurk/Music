@@ -16,7 +16,8 @@
 #include "discord/discord.h"
 #include "ffmpeg/ffmpegcpp.h"
 
-struct DiscordState {
+struct DiscordState
+{
 	std::unique_ptr<discord::Core> core;
 };
 
