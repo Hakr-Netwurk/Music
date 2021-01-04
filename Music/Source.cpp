@@ -16,6 +16,8 @@
 #include "discord/discord.h"
 #include "ffmpeg/ffmpegcpp.h"
 
+#define volume 0.1
+
 struct DiscordState
 {
 	std::unique_ptr<discord::Core> core;
@@ -26,6 +28,7 @@ std::thread t, t2, t3;
 std::wstring name;
 int threadid, mainthreadid, next = -1;
 bool suspended = false, doneplaying, discordstarted = false, idle = false;
+std::vector<std::string> supportedformats = { "mp3", "ogg", "m4a", "wma", "flac" }; // must be lowercase
 DiscordState state{};
 discord::Core* core{};
 discord::Activity activity{};
@@ -298,8 +301,6 @@ int main()
 	for (const auto& entry : std::filesystem::directory_iterator(path))
 	{
 		str = entry.path().wstring();
-		//str.insert(0, "\'");
-		//str += "\'";
 		v.push_back(str);
 		n++;
 		curlist.push_back(n - 1);
@@ -310,7 +311,6 @@ int main()
 	{
 		startdiscord();
 	}
-	//system("start ssmhelper.exe");
 	while (true)
 	{
 		shuffle(curlist, n);
@@ -363,53 +363,89 @@ int main()
 			tempstr.clear();
 			if (!(str[str.length() - 1] == 'v' && str[str.length() - 2] == 'a' && str[str.length() - 3] == 'w' && str[str.length() - 4] == '.'))
 			{
-				if (str[str.length() - 1] == '3' && str[str.length() - 2] == 'p' && str[str.length() - 3] == 'm' && str[str.length() - 4] == '.')
+				int format = -1;
+				for (int j = 0; j < supportedformats.size(); j++)
 				{
-					for (int j = 0; j < name.length(); j++)
+					bool mismatch = false;;
+					for (int k = 0; k < supportedformats[j].size(); k++)
 					{
-						narrowstr.push_back(name[j]);
+						if (str[str.length() - 1 - k] != supportedformats[j][supportedformats[j].size() - 1 - k])
+						{
+							if (str[str.length() - 1 - k] > 64 && str[str.length() - 1 - k] < 91)
+							{
+								if (str[str.length() - 1 - k] + 32 != supportedformats[j][supportedformats[j].size() - 1 - k])
+								{
+									mismatch = true;
+									break;
+								}
+							}
+							else
+							{
+								mismatch = true;
+								break;
+							}
+						}
 					}
-					narrowstr += ".mp3";
-					tempstr = "[ssmtemp]";
-					tempstr += narrowstr;
-					tempstr.erase(tempstr.end() - 4, tempstr.end());
-					tempstr += ".wav";
-					ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
-					ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
-					ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-					ffmpegcpp::Filter* filter = new ffmpegcpp::Filter("volume=0.1", encoder);
-					/*int rawAudioSampleRate = 48000;
-					int rawAudioChannels = 2;
-					ffmpegcpp::RawAudioFileSource* audioFile = new ffmpegcpp::RawAudioFileSource(narrowstr.c_str(), "mp3", rawAudioSampleRate, rawAudioChannels, encoder);*/
-					ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
-					audioFile->DecodeBestAudioStream(filter);
-					audioFile->PreparePipeline();
-					while (!audioFile->IsDone())
+					if (str[str.length() - 1 - supportedformats[j].size()] != '.')
 					{
-						audioFile->Step();
+						mismatch = true;
 					}
-					muxer->Close();
-					delete muxer;
-					delete codec;
-					delete encoder;
-					delete audioFile;
-					system("CLS");
-					name.clear();
-					for (int j = 0; j < narrowstr.length() - 4; j++)
+					if (mismatch)
 					{
-						name.push_back(narrowstr[j]);
+						continue;
 					}
-					str.clear();
-					for (int j = 0; j < tempstr.length(); j++)
+					else
 					{
-						str.push_back(tempstr[j]);
+						format = j;
+						break;
 					}
 				}
-				else
+				if (format == -1)
 				{
 					continue;
 				}
+				for (int k = 0; k < name.length(); k++)
+				{
+					narrowstr.push_back(name[k]);
+				}
+				narrowstr += ".";
+				narrowstr += supportedformats[format];
+				tempstr = "[ssmtemp]";
+				tempstr += narrowstr;
+				tempstr.erase(tempstr.end() - 4, tempstr.end());
+				tempstr += ".wav";
+				ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
+				ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
+				ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
+				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter(("volume=" + std::to_string(volume)).c_str(), encoder);
+				/*int rawAudioSampleRate = 48000;
+				int rawAudioChannels = 2;
+				ffmpegcpp::RawAudioFileSource* audioFile = new ffmpegcpp::RawAudioFileSource(narrowstr.c_str(), "mp3", rawAudioSampleRate, rawAudioChannels, encoder);*/
+				ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
+				audioFile->DecodeBestAudioStream(filter);
+				audioFile->PreparePipeline();
+				while (!audioFile->IsDone())
+				{
+					audioFile->Step();
+				}
+				muxer->Close();
+				delete muxer;
+				delete codec;
+				delete encoder;
+				delete audioFile;
+				system("CLS");
+				name.clear();
+				for (int k = 0; k < narrowstr.length() - 4; k++)
+				{
+					name.push_back(narrowstr[k]);
+				}
+				str.clear();
+				for (int k = 0; k < tempstr.length(); k++)
+				{
+					str.push_back(tempstr[k]);
+				}
 			}
+		}
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
 			std::string s(name.begin(), name.end());
 			std::cout << "Now Playing: " << s << std::endl;
