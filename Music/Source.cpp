@@ -392,7 +392,7 @@ int main()
 			}
 			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
 			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
-			mciSendStringW((std::wstring(L"open ") + str + std::wstring(L" alias CURR_SND")).c_str(), NULL, 0, 0);
+			std::cout << mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0);
 			mciSendStringA("play CURR_SND", NULL, 0, 0);
 			WIN32_FIND_DATAW lpfinddata;
 			GetAsyncKeyState(179);
@@ -405,6 +405,7 @@ int main()
 					clock_t current = clock();
 					SetConsoleTitleW(L"PAUSED");
 					std::string s(name.begin(), name.end());
+					system("CLS");
 					std::cout << "PAUSED: " << s << std::endl;
 					while (GetAsyncKeyState(179))
 					{
@@ -424,6 +425,7 @@ int main()
 					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
 					SetConsoleTitleW(name.c_str());
 					s = std::string(name.begin(), name.end());
+					system("CLS");
 					std::cout << "Now Playing: " << s << std::endl;
 				}
 				if (GetAsyncKeyState(177))
@@ -435,11 +437,13 @@ int main()
 					}
 					break;
 				}
-				if (GetAsyncKeyState(0x20)) {
+				if (GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())
+				{
 					mciSendString("pause CURR_SND", NULL, 0, 0);
 					clock_t current = clock();
 					SetConsoleTitleW(L"PAUSED");
 					std::string s(name.begin(), name.end());
+					system("CLS");
 					std::cout << "PAUSED: " << s << std::endl;
 					while (GetAsyncKeyState(0x20))
 					{
@@ -459,18 +463,11 @@ int main()
 					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
 					SetConsoleTitleW(name.c_str());
 					s = std::string(name.begin(), name.end());
+					system("CLS");
 					std::cout << "Now Playing: " << s << std::endl;
 				}
 			}
 			delete demuxer;
-			/*suspended = false;
-			doneplaying = false;
-			t = std::thread(play, str);
-			t2 = std::thread(waitforkey);
-			t3 = std::thread(deleteused, str);
-			t.join();
-			t2.join();
-			t3.join();*/
 			if (next != -2)
 			{
 				next = -1;
