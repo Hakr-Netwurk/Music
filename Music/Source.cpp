@@ -165,6 +165,7 @@ void startdiscord()
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
 	SetCurrentDirectoryW(path.c_str());
+	mciSendString("close CURR_SND", NULL, 0, 0);
 	system("del ^[ssmtemp^]*.wav");
 	return TRUE;
 }
@@ -253,16 +254,16 @@ int main()
 		{
 			if (next == -1)
 			{
-				/*if (i != (ind + 1) % n)
+				if (i != (ind + 1) % n)
 				{
 					next = list[ind];
 					i--;
 				}
 				else
-				{*/
-				next = curlist[i];
-				list.push_back(next);
-				//}
+				{
+					next = curlist[i];
+					list.push_back(next);
+				}
 				ind++;
 			}
 			else if (next == -2)
@@ -338,6 +339,7 @@ int main()
 				if (format == -1)
 				{
 					continue;
+					next = -1;
 				}
 				for (int k = 0; k < name.length(); k++)
 				{
@@ -392,8 +394,9 @@ int main()
 			}
 			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
 			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
-			std::cout << mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0);
+			mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0);
 			mciSendStringA("play CURR_SND", NULL, 0, 0);
+			thyme = clock();
 			WIN32_FIND_DATAW lpfinddata;
 			GetAsyncKeyState(179);
 			for (int j = 0; j < info.durationInSeconds * 10; j++)
@@ -430,8 +433,18 @@ int main()
 				}
 				if (GetAsyncKeyState(177))
 				{
-					mciSendString("stop CURR_SND", NULL, 0, 0);
+					mciSendString("close CURR_SND", NULL, 0, 0);
 					while (GetAsyncKeyState(177))
+					{
+						Sleep(1);
+					}
+					next = -2;
+					break;
+				}
+				if (GetAsyncKeyState(176))
+				{
+					mciSendString("close CURR_SND", NULL, 0, 0);
+					while (GetAsyncKeyState(176))
 					{
 						Sleep(1);
 					}
@@ -467,6 +480,8 @@ int main()
 					std::cout << "Now Playing: " << s << std::endl;
 				}
 			}
+			mciSendString("close CURR_SND", NULL, 0, 0);
+			DeleteFileW(str.c_str());
 			delete demuxer;
 			if (next != -2)
 			{
