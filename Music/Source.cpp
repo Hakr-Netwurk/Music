@@ -59,12 +59,15 @@ void shuffle(std::vector<int>& curlist, int n)
 {
 	int last, last2, last3, temp;
 	std::set<int> used;
-	last = curlist[n - 1];
-	last2 = curlist[n - 2];
-	last3 = curlist[n - 3];
-	used.insert(last);
-	used.insert(last2);
-	used.insert(last3);
+	if (curlist.size() > 3)
+	{
+		last = curlist[n - 1];
+		last2 = curlist[n - 2];
+		last3 = curlist[n - 3];
+		used.insert(last);
+		used.insert(last2);
+		used.insert(last3);
+	}
 	std::random_device rd;
 	std::mt19937 mt(rd());
 	for (int i = 0; i < n; i++)
@@ -199,7 +202,7 @@ bool getdiscord()
 
 
 
-int main()
+int main(int argc, char* argv[])
 {
 	SetConsoleTitle("Music");
 	if (!SetConsoleCtrlHandler(CtrlHandler, TRUE))
@@ -219,8 +222,24 @@ int main()
 	input.ki.dwFlags = KEYEVENTF_KEYUP;
 	input.ki.time = 0;
 	input.ki.wVk = 7;
-	std::wifstream fin("path");
+	std::wifstream fin;
 	std::wofstream fout;
+	if (argc > 1)
+	{
+		temp = argv[1];
+		path = std::wstring(temp.begin(), temp.end());
+		while (path[path.size() - 1] != '\\')
+		{
+			str.insert(str.begin(), path[path.size() - 1]);
+			path.erase(path.end() - 1);
+		}
+		SetCurrentDirectoryW(path.c_str());
+		curlist.push_back(0);
+		v.push_back(str);
+		n = 1;
+		goto playing_start;
+	}
+	fin.open("path");
 	getline(fin, path);
 	fin.close();
 	if (path == L"")
@@ -246,6 +265,7 @@ int main()
 	{
 		startdiscord();
 	}
+playing_start:
 	while (true)
 	{
 		shuffle(curlist, n);
@@ -275,6 +295,7 @@ int main()
 					{
 						ind++;
 					}
+					i--;
 				}
 				next = list[ind];
 			}
