@@ -167,7 +167,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 	SetCurrentDirectoryW(path.c_str());
 	mciSendString("close CURR_SND", NULL, 0, 0);
 	system("del ^[ssmtemp^]*.wav");
-	return TRUE;
+	return FALSE;
 }
 
 bool getdiscord()
