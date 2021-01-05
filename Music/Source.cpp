@@ -169,13 +169,15 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
 	case CTRL_CLOSE_EVENT: {
 		// Clean up
 		std::string narrowPath(path.begin(), path.end());
-		system(("cd " + narrowPath + " && del ^[ssmtemp^]*.wav").c_str());
+		SetCurrentDirectory(narrowPath.c_str());
+		system("del [ssmtemp]*.wav");
 		return TRUE;
 	};
 	case CTRL_C_EVENT: {
 		// Clean up
 		std::string narrowPath(path.begin(), path.end());
-		system(("cd " + narrowPath + " && del ^[ssmtemp^]*.wav").c_str());
+		SetCurrentDirectory(narrowPath.c_str());
+		system("del [ssmtemp]*.wav");
 		return TRUE;
 	}
 	}
