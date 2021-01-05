@@ -16,7 +16,7 @@
 #include "discord/discord.h"
 #include "ffmpeg/ffmpegcpp.h"
 
-#define volume "volume=0.1"
+#define volume "volume=1"
 
 struct DiscordState
 {
@@ -33,6 +33,16 @@ DiscordState state{};
 discord::Core* core{};
 discord::Activity activity{};
 discord::ActivityTimestamps timestamp{};
+std::wstring path;
+
+/* Utilities and macros */
+void mcido(const char* str) {
+	mciSendStringA(str, NULL, 0, 0);
+}
+
+void mcidoW(LPCWSTR str) {
+	mciSendStringW(str, NULL, 0, 0);
+}
 
 int morerand(int n)
 {
@@ -95,6 +105,8 @@ void shuffle(std::vector<int>& curlist, int n)
 	}
 }
 
+/* API routines */
+
 void discordthing()
 {
 	threadid = GetCurrentThreadId();
@@ -139,6 +151,7 @@ void discordthing()
 	}
 }
 
+
 void startdiscord()
 {
 	activity.SetType(discord::ActivityType::Playing);
@@ -147,6 +160,26 @@ void startdiscord()
 	std::thread discth = std::thread(discordthing);
 	discth.detach();
 	discordstarted = true;
+}
+
+/* Console exit handler */
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
+	switch (fdwCtrlType)
+	{
+	case CTRL_CLOSE_EVENT: {
+		// Clean up
+		std::string narrowPath(path.begin(), path.end());
+		system(("cd " + narrowPath + " && del ^[ssmtemp^]*.wav").c_str());
+		return TRUE;
+	};
+	case CTRL_C_EVENT: {
+		// Clean up
+		std::string narrowPath(path.begin(), path.end());
+		system(("cd " + narrowPath + " && del ^[ssmtemp^]*.wav").c_str());
+		return TRUE;
+	}
+	}
+	return FALSE;
 }
 
 bool getdiscord()
@@ -176,14 +209,21 @@ bool getdiscord()
 	return false;
 }
 
+
+
 int main()
 {
 	SetConsoleTitle("Music");
+	if (!SetConsoleCtrlHandler(CtrlHandler, TRUE))
+	{
+		std::cout << "Ctrl handler failed." << std::endl;
+		return -2;
+	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
 	int n = 0, ind = -1, thyme;
 	const char* c;
 	std::string temp;
-	std::wstring path, str;
+	std::wstring str;
 	std::vector<int> curlist, list;
 	std::vector<std::wstring> v;
 	INPUT input;
@@ -365,7 +405,8 @@ int main()
 			}
 			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
 			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
-			PlaySoundW(str.c_str(), NULL, SND_ASYNC);
+			mciSendStringW((std::wstring(L"open ") + str + std::wstring(L" alias CURR_SND")).c_str(), NULL, 0, 0);
+			mciSendStringA("play CURR_SND", NULL, 0, 0);
 			WIN32_FIND_DATAW lpfinddata;
 			GetAsyncKeyState(179);
 			for (int j = 0; j < info.durationInSeconds * 10; j++)
@@ -373,7 +414,7 @@ int main()
 				Sleep(100);
 				if (GetAsyncKeyState(179))
 				{
-					PlaySoundW(NULL, NULL, SND_ASYNC);
+					mciSendString("pause CURR_SND", NULL, 0, 0);
 					clock_t current = clock();
 					SetConsoleTitleW(L"PAUSED");
 					std::string s(name.begin(), name.end());
@@ -382,36 +423,6 @@ int main()
 					{
 						Sleep(1);
 					}
-					tempstr = std::string(str.begin(), str.end());
-					ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
-					ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
-					ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-					ffmpegcpp::Filter* filter;
-					if (name[name.length() - 1] == 'v' && name[name.length() - 2] == 'a' && name[name.length() - 1] == 'w')
-					{
-						filter = new ffmpegcpp::Filter("volume=1", encoder);
-					}
-					else
-					{
-						filter = new ffmpegcpp::Filter(volume, encoder);
-					}
-					std::string trimfilter = "atrim=start=";
-					trimfilter += std::to_string((current - start) / 1000.0);
-					ffmpegcpp::Filter* filter2 = new ffmpegcpp::Filter(trimfilter.c_str(), filter);
-					ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
-					audioFile->DecodeBestAudioStream(filter2);
-					audioFile->PreparePipeline();
-					while (!audioFile->IsDone())
-					{
-						audioFile->Step();
-					}
-					muxer->Close();
-					delete muxer;
-					delete codec;
-					delete encoder;
-					delete audioFile;
-					delete filter;
-					delete filter2;
 					while (!GetAsyncKeyState(179))
 					{
 						Sleep(1);
@@ -423,19 +434,45 @@ int main()
 					demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
 					info = demuxer->GetInfo();
 					start = clock() - current + start;
-					PlaySoundW(str.c_str(), NULL, SND_ASYNC);
+					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
 					SetConsoleTitleW(name.c_str());
 					s = std::string(name.begin(), name.end());
 					std::cout << "Now Playing: " << s << std::endl;
 				}
 				if (GetAsyncKeyState(177))
 				{
-					PlaySoundW(NULL, NULL, SND_ASYNC);
+					mciSendString("stop CURR_SND", NULL, 0, 0);
 					while (GetAsyncKeyState(177))
 					{
 						Sleep(1);
 					}
 					break;
+				}
+				if (GetAsyncKeyState(0x20)) {
+					mciSendString("pause CURR_SND", NULL, 0, 0);
+					clock_t current = clock();
+					SetConsoleTitleW(L"PAUSED");
+					std::string s(name.begin(), name.end());
+					std::cout << "PAUSED: " << s << std::endl;
+					while (GetAsyncKeyState(0x20))
+					{
+						Sleep(1);
+					}
+					while (!GetAsyncKeyState(0x20))
+					{
+						Sleep(1);
+					}
+					while (GetAsyncKeyState(0x20))
+					{
+						Sleep(1);
+					}
+					demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+					info = demuxer->GetInfo();
+					start = clock() - current + start;
+					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
+					SetConsoleTitleW(name.c_str());
+					s = std::string(name.begin(), name.end());
+					std::cout << "Now Playing: " << s << std::endl;
 				}
 			}
 			delete demuxer;
