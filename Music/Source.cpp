@@ -162,24 +162,11 @@ void startdiscord()
 	discordstarted = true;
 }
 
-/* Console exit handler */
-BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
-	switch (fdwCtrlType)
-	{
-	case CTRL_CLOSE_EVENT: {
-		// Clean up
-		std::string narrowPath(path.begin(), path.end());
-		system(("cd " + narrowPath + " && del ^[ssmtemp^]*.wav").c_str());
-		return TRUE;
-	};
-	case CTRL_C_EVENT: {
-		// Clean up
-		std::string narrowPath(path.begin(), path.end());
-		system(("cd " + narrowPath + " && del ^[ssmtemp^]*.wav").c_str());
-		return TRUE;
-	}
-	}
-	return FALSE;
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
+{
+	SetCurrentDirectoryW(path.c_str());
+	system("del ^[ssmtemp^]*.wav");
+	return TRUE;
 }
 
 bool getdiscord()
