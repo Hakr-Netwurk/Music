@@ -23,10 +23,8 @@ struct DiscordState
 	std::unique_ptr<discord::Core> core;
 };
 
-std::set<HANDLE> suspendedthreads;
-std::thread t, t2, t3;
 std::wstring name;
-int threadid, mainthreadid, next = -1;
+int  next = -1;
 bool suspended = false, doneplaying, discordstarted = false, idle = false;
 std::vector<std::string> supportedformats = { "mp3", "ogg", "m4a", "wma", "flac" }; // must be lowercase
 DiscordState state{};
@@ -108,11 +106,8 @@ void shuffle(std::vector<int>& curlist, int n)
 	}
 }
 
-/* API routines */
-
 void discordthing()
 {
-	threadid = GetCurrentThreadId();
 	std::wstring lastname;
 	while (true)
 	{
@@ -260,12 +255,11 @@ int main(int argc, char* argv[])
 		curlist.push_back(n - 1);
 	}
 	thyme = clock();
-	mainthreadid = GetCurrentThreadId();
+playing_start:
 	if (getdiscord())
 	{
 		startdiscord();
 	}
-playing_start:
 	while (true)
 	{
 		shuffle(curlist, n);
@@ -376,9 +370,6 @@ playing_start:
 				ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
 				ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
 				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter(volume, encoder);
-				/*int rawAudioSampleRate = 48000;
-				int rawAudioChannels = 2;
-				ffmpegcpp::RawAudioFileSource* audioFile = new ffmpegcpp::RawAudioFileSource(narrowstr.c_str(), "mp3", rawAudioSampleRate, rawAudioChannels, encoder);*/
 				ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
 				audioFile->DecodeBestAudioStream(filter);
 				audioFile->PreparePipeline();
