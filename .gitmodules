@@ -1,0 +1,3 @@
+[submodule "music-gui"]
+	path = music-gui
+	url = https://github.com/Hakr-Netwurk/music-gui
