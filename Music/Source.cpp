@@ -16,14 +16,14 @@
 #include "discord/discord.h"
 #include "ffmpeg/ffmpegcpp.h"
 
-#define volume "volume=1"
+#define volume "volume=0.1"
 
 struct DiscordState
 {
 	std::unique_ptr<discord::Core> core;
 };
 
-std::wstring name;
+std::wstring name, nowplaying;
 int  next = -1;
 bool suspended = false, doneplaying, discordstarted = false, idle = false;
 std::vector<std::string> supportedformats = { "mp3", "ogg", "m4a", "wma", "flac" }; // must be lowercase
@@ -108,15 +108,15 @@ void shuffle(std::vector<int>& curlist, int n)
 
 void discordthing()
 {
-	std::wstring lastname;
+	std::wstring lastplaying;
 	while (true)
 	{
 		std::string tempstr = "Playing ";
-		for (int i = 0; i < name.length(); i++)
+		for (int i = 0; i < nowplaying.length(); i++)
 		{
-			tempstr.push_back(name[i]);
+			tempstr.push_back(nowplaying[i]);
 		}
-		lastname = name;
+		lastplaying = nowplaying;
 		activity.SetDetails(tempstr.c_str());
 		timestamp.SetStart(time(NULL));
 		activity.GetTimestamps() = timestamp;
@@ -141,7 +141,7 @@ void discordthing()
 				state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
 				idle = false;
 			}
-			if (name != lastname)
+			if (nowplaying != lastplaying)
 			{
 				break;
 			}
@@ -407,6 +407,7 @@ playing_start:
 			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
 			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
 			mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0);
+			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0);
 			thyme = clock();
 			WIN32_FIND_DATAW lpfinddata;
