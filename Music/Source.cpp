@@ -15,6 +15,7 @@
 #include <TlHelp32.h>
 #include "discord/discord.h"
 #include "ffmpeg/ffmpegcpp.h"
+#include "ui.h"
 
 #define volume "volume=0.1"
 
@@ -398,6 +399,7 @@ playing_start:
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
 			std::string s(name.begin(), name.end());
 			std::cout << "Now Playing: " << s << std::endl;
+			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, 0, true, false);
 			std::clock_t start = clock();
 			narrowstr.clear();
 			for (int j = 0; j < str.length(); j++)

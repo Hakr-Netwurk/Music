@@ -257,6 +257,7 @@
     <ClInclude Include="ffmpeg\Sources\RawVideoFileSource.h" />
     <ClInclude Include="ffmpeg\std.h" />
     <ClInclude Include="ffmpeg\VideoFormatConverter.h" />
+    <ClInclude Include="ui.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="discord_game_sdk.dll.lib" />
