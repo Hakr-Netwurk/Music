@@ -477,7 +477,7 @@ playing_start:
 					{
 						Sleep(1);
 					}
-					while (!GetAsyncKeyState(0x20))
+					while (!GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())
 					{
 						Sleep(1);
 					}
