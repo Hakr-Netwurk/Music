@@ -25,8 +25,8 @@ struct DiscordState
 };
 
 std::wstring name, nowplaying;
-int  next = -1;
-bool suspended = false, doneplaying, discordstarted = false, idle = false;
+int next = -1, timesincestart;
+bool paused = false, discordpaused, doneplaying, discordstarted = false, idle = false;
 std::vector<std::string> supportedformats = { "mp3", "ogg", "m4a", "wma", "flac" }; // must be lowercase
 DiscordState state{};
 discord::Core* core{};
@@ -145,6 +145,22 @@ void discordthing()
 			if (nowplaying != lastplaying)
 			{
 				break;
+			}
+			if (paused && !discordpaused)
+			{
+				activity.SetState("paused");
+				timestamp.SetStart(time(NULL));
+				activity.GetTimestamps() = timestamp;
+				state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
+				discordpaused = true;
+			}
+			if (discordpaused && !paused)
+			{
+				activity.SetState("");
+				timestamp.SetStart(time(NULL) - timesincestart / 1000);
+				activity.GetTimestamps() = timestamp;
+				state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
+				discordpaused = false;
 			}
 		}
 	}
@@ -396,10 +412,20 @@ playing_start:
 					str.push_back(tempstr[k]);
 				}
 			}
+			else
+			{
+				for (int i = str.length() - 1; i >= 0; i--)
+				{
+					if (str[i] == '\\')
+					{
+						str.erase(str.begin(), str.begin() + i + 1);
+					}
+				}
+			}
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
-			std::string s(name.begin(), name.end());
-			std::cout << "Now Playing: " << s << std::endl;
-			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, 0, true, false);
+			//std::string s(name.begin(), name.end());
+			//std::cout << "Now Playing: " << s << std::endl;
+			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false);
 			std::clock_t start = clock();
 			narrowstr.clear();
 			for (int j = 0; j < str.length(); j++)
@@ -412,28 +438,33 @@ playing_start:
 			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0);
 			thyme = clock();
-			WIN32_FIND_DATAW lpfinddata;
-			GetAsyncKeyState(179);
 			for (int j = 0; j < info.durationInSeconds * 10; j++)
 			{
 				Sleep(100);
+				GetAsyncKeyState(176);
+				GetAsyncKeyState(177);
+				GetAsyncKeyState(179);
+				GetAsyncKeyState(32);
 				if (GetAsyncKeyState(179))
 				{
 					mciSendString("pause CURR_SND", NULL, 0, 0);
 					clock_t current = clock();
 					SetConsoleTitleW(L"PAUSED");
-					std::string s(name.begin(), name.end());
-					system("CLS");
-					std::cout << "PAUSED: " << s << std::endl;
+					//std::string s(name.begin(), name.end());
+					//system("CLS");
+					//std::cout << "PAUSED: " << s << std::endl;
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, true);
+					paused = true;
+					timesincestart = current - start;
 					while (GetAsyncKeyState(179))
 					{
 						Sleep(1);
 					}
-					while (!GetAsyncKeyState(179))
+					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow()))
 					{
 						Sleep(1);
 					}
-					while (GetAsyncKeyState(179))
+					while (GetAsyncKeyState(179) || GetAsyncKeyState(32))
 					{
 						Sleep(1);
 					}
@@ -442,9 +473,11 @@ playing_start:
 					start = clock() - current + start;
 					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
 					SetConsoleTitleW(name.c_str());
-					s = std::string(name.begin(), name.end());
-					system("CLS");
-					std::cout << "Now Playing: " << s << std::endl;
+					//s = std::string(name.begin(), name.end());
+					//system("CLS");
+					//std::cout << "Now Playing: " << s << std::endl;
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false);
+					paused = false;
 				}
 				if (GetAsyncKeyState(177))
 				{
@@ -470,18 +503,21 @@ playing_start:
 					mciSendString("pause CURR_SND", NULL, 0, 0);
 					clock_t current = clock();
 					SetConsoleTitleW(L"PAUSED");
-					std::string s(name.begin(), name.end());
-					system("CLS");
-					std::cout << "PAUSED: " << s << std::endl;
+					//std::string s(name.begin(), name.end());
+					//system("CLS");
+					//std::cout << "PAUSED: " << s << std::endl;
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, true);
+					paused = true;
+					timesincestart = current - start;
 					while (GetAsyncKeyState(0x20))
 					{
 						Sleep(1);
 					}
-					while (!GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())
+					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow()))
 					{
 						Sleep(1);
 					}
-					while (GetAsyncKeyState(0x20))
+					while (GetAsyncKeyState(179) || GetAsyncKeyState(32))
 					{
 						Sleep(1);
 					}
@@ -490,9 +526,11 @@ playing_start:
 					start = clock() - current + start;
 					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
 					SetConsoleTitleW(name.c_str());
-					s = std::string(name.begin(), name.end());
-					system("CLS");
-					std::cout << "Now Playing: " << s << std::endl;
+					//s = std::string(name.begin(), name.end());
+					//system("CLS");
+					//std::cout << "Now Playing: " << s << std::endl;
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false);
+					paused = false;
 				}
 			}
 			mciSendString("close CURR_SND", NULL, 0, 0);

@@ -74,16 +74,17 @@ std::pair<int, int> getcurrentlocation(std::string str)
 /
 ≡
 
+C418 - Alpha
 [--------------------]
 _    <<   |>   >>    ↔
 *
 */
 
-void updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int elapsed, int total, bool autosaveon, bool paused)
+void updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused)
 {
 	CONSOLE_SCREEN_BUFFER_INFO screen;
 	GetConsoleScreenBufferInfo(console, &screen);
-	std::string selected;
+	std::string selected, narrowname = std::string(name.begin(), name.end());
 	std::vector<std::vector<std::string>> v =
 	{
 		{ "null", "null", "null" },
@@ -108,7 +109,15 @@ void updatedisplay(std::string action, std::pair<int, int> location, std::wstrin
 	{
 		selected = v[location.first][location.second + 1];
 	}
-	if (selected == "null")
+	if (action == "enter")
+	{
+		selected = v[location.first][location.second];
+		if (selected == "pauseplay")
+		{
+			paused = !paused;
+		}
+	}
+	if (action == "null")
 	{
 		selected = v[location.first][location.second];
 	}
@@ -120,12 +129,21 @@ void updatedisplay(std::string action, std::pair<int, int> location, std::wstrin
 	}
 	std::cout << char(240);
 	color("light gray", "black");
-	std::cout << std::endl << std::endl;
+	std::cout << std::endl << std::endl << narrowname << std::endl;
 	if (selected == "progbar")
 	{
 		color("black", "light gray");
 	}
-	std::cout << "[--------------------]";
+	std::cout << '[';
+	for (int i = 0; i < numbars; i++)
+	{
+		std::cout << '-';
+	}
+	for (int i = numbars; i < 20; i++)
+	{
+		std::cout << ' ';
+	}
+	std::cout << ']';
 	color("light gray", "black");
 	std::cout << std::endl;
 	if (selected == "autosave")
@@ -175,4 +193,8 @@ void updatedisplay(std::string action, std::pair<int, int> location, std::wstrin
 		color("black", "light gray");
 	}
 	std::cout << char(29);
+	CONSOLE_CURSOR_INFO cursorinfo;
+	GetConsoleCursorInfo(console, &cursorinfo);
+	cursorinfo.bVisible = false;
+	SetConsoleCursorInfo(console, &cursorinfo);
 }
