@@ -451,7 +451,7 @@ playing_start:
 				if (((current - start) / 1000) / info.durationInSeconds * 20 > lastbar)
 				{
 					lastbar = ((current - start) / 1000) / info.durationInSeconds * 20;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, (current - start) / 1000, info.durationInSeconds);
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
 				}
 				if (current - start >= info.durationInSeconds * 1000)
 				{
@@ -460,7 +460,7 @@ playing_start:
 				if ((current - start) / 1000 > lastsec)
 				{
 					lastsec = (current - start) / 1000;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, lastsec, info.durationInSeconds);
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, lastsec, info.durationInSeconds);
 				}
 				if (GetAsyncKeyState(179))
 				{
