@@ -17,7 +17,7 @@
 #include "ffmpeg/ffmpegcpp.h"
 #include "ui.h"
 
-#define volume "volume=0.1"
+#define volume "10" // out of 100
 
 struct DiscordState
 {
@@ -373,7 +373,7 @@ playing_start:
 					continue;
 					next = -1;
 				}
-				for (int k = 0; k < name.length(); k++)
+				/*for (int k = 0; k < name.length(); k++)
 				{
 					narrowstr.push_back(name[k]);
 				}
@@ -382,11 +382,11 @@ playing_start:
 				tempstr = "[ssmtemp]";
 				tempstr += narrowstr;
 				tempstr.erase(tempstr.end() - 4, tempstr.end());
-				tempstr += ".wav";
+				tempstr += ".mp3";
 				ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
-				ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_PCM_S16LE);
+				ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
 				ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter(volume, encoder);
+				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter("volume=1", encoder);
 				ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
 				audioFile->DecodeBestAudioStream(filter);
 				audioFile->PreparePipeline();
@@ -410,16 +410,17 @@ playing_start:
 				for (int k = 0; k < tempstr.length(); k++)
 				{
 					str.push_back(tempstr[k]);
-				}
+				}*/
 			}
-			else
+			/*else
 			{
-				for (int i = str.length() - 1; i >= 0; i--)
+				
+			}*/
+			for (int i = str.length() - 1; i >= 0; i--)
+			{
+				if (str[i] == '\\')
 				{
-					if (str[i] == '\\')
-					{
-						str.erase(str.begin(), str.begin() + i + 1);
-					}
+					str.erase(str.begin(), str.begin() + i + 1);
 				}
 			}
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
@@ -437,6 +438,7 @@ playing_start:
 			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds);
 			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0);
+			mciSendStringA(("setaudio CURR_SND volume to " + std::string(volume)).c_str(), NULL, 0, 0);
 			thyme = clock();
 			lastbar = 0;
 			lastsec = 0;
