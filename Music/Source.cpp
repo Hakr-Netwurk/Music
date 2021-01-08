@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
-	int n = 0, ind = -1, thyme;
+	int n = 0, ind = -1, thyme, lastbar, lastsec;
 	const char* c;
 	std::string temp;
 	std::wstring str;
@@ -425,7 +425,6 @@ playing_start:
 			SetWindowTextW(GetConsoleWindow(), name.c_str());
 			//std::string s(name.begin(), name.end());
 			//std::cout << "Now Playing: " << s << std::endl;
-			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false);
 			std::clock_t start = clock();
 			narrowstr.clear();
 			for (int j = 0; j < str.length(); j++)
@@ -435,9 +434,12 @@ playing_start:
 			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
 			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
 			mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0);
+			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds);
 			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0);
 			thyme = clock();
+			lastbar = 0;
+			lastsec = 0;
 			for (int j = 0; j < info.durationInSeconds * 10; j++)
 			{
 				Sleep(100);
@@ -445,6 +447,21 @@ playing_start:
 				GetAsyncKeyState(177);
 				GetAsyncKeyState(179);
 				GetAsyncKeyState(32);
+				clock_t current = clock();
+				if (((current - start) / 1000) / info.durationInSeconds * 20 > lastbar)
+				{
+					lastbar = ((current - start) / 1000) / info.durationInSeconds * 20;
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, (current - start) / 1000, info.durationInSeconds);
+				}
+				if (current - start >= info.durationInSeconds * 1000)
+				{
+					break;
+				}
+				if ((current - start) / 1000 > lastsec)
+				{
+					lastsec = (current - start) / 1000;
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, lastsec, info.durationInSeconds);
+				}
 				if (GetAsyncKeyState(179))
 				{
 					mciSendString("pause CURR_SND", NULL, 0, 0);
@@ -453,7 +470,7 @@ playing_start:
 					//std::string s(name.begin(), name.end());
 					//system("CLS");
 					//std::cout << "PAUSED: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, true);
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, (current - start) / 1000, info.durationInSeconds);
 					paused = true;
 					timesincestart = current - start;
 					while (GetAsyncKeyState(179))
@@ -476,7 +493,7 @@ playing_start:
 					//s = std::string(name.begin(), name.end());
 					//system("CLS");
 					//std::cout << "Now Playing: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false);
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
 					paused = false;
 				}
 				if (GetAsyncKeyState(177))
@@ -506,7 +523,7 @@ playing_start:
 					//std::string s(name.begin(), name.end());
 					//system("CLS");
 					//std::cout << "PAUSED: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, true);
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, (current - start) / 1000, info.durationInSeconds);
 					paused = true;
 					timesincestart = current - start;
 					while (GetAsyncKeyState(0x20))
@@ -529,7 +546,7 @@ playing_start:
 					//s = std::string(name.begin(), name.end());
 					//system("CLS");
 					//std::cout << "Now Playing: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false);
+					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
 					paused = false;
 				}
 			}

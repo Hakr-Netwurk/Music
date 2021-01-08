@@ -5,21 +5,6 @@
 
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
-void clear() {
-	COORD topLeft = { 0, 0 };
-	CONSOLE_SCREEN_BUFFER_INFO screen;
-	DWORD written;
-	GetConsoleScreenBufferInfo(console, &screen);
-	FillConsoleOutputCharacterA(
-		console, ' ', screen.dwSize.X * screen.dwSize.Y, topLeft, &written
-	);
-	FillConsoleOutputAttribute(
-		console, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE,
-		screen.dwSize.X * screen.dwSize.Y, topLeft, &written
-	);
-	SetConsoleCursorPosition(console, topLeft);
-}
-
 int colortonum(std::string str)
 {
 	std::vector<std::string> v = { "black", "dark blue", "dark green", "dark cyan", "dark red", "dark magenta", "dark yellow", "light gray", "dark gray", "blue", "green", "cyan", "red", "magenta", "yellow", "white" };
@@ -36,6 +21,40 @@ int colortonum(std::string str)
 void color(std::string text, std::string background)
 {
 	SetConsoleTextAttribute(console, colortonum(text) + colortonum(background) * 16);
+}
+
+std::string formattime(int timestamp)
+{
+	std::string seconds, minutes, hours, days, finalstr;
+	seconds = std::to_string(timestamp % 60);
+	timestamp /= 60;
+	minutes = std::to_string(timestamp % 60);
+	timestamp /= 60;
+	hours = std::to_string(timestamp % 60);
+	timestamp /= 60;
+	days = std::to_string(timestamp);
+	while (seconds.length() < 2)
+	{
+		seconds.insert(seconds.begin(), '0');
+	}
+	while (minutes.length() < 2)
+	{
+		minutes.insert(minutes.begin(), '0');
+	}
+	while (hours.length() < 2 && hours != "0")
+	{
+		hours.insert(hours.begin(), '0');
+	}
+	if (days != "0")
+	{
+		finalstr += days + ":";
+	}
+	if (hours != "0")
+	{
+		finalstr += hours + ":";
+	}
+	finalstr += minutes + ":" + seconds;
+	return finalstr;
 }
 
 std::pair<int, int> getcurrentlocation(std::string str)
@@ -75,12 +94,12 @@ std::pair<int, int> getcurrentlocation(std::string str)
 ≡
 
 C418 - Alpha
-[--------------------]
+[--------------------] 00:01/10:50
 _    <<   |>   >>    ↔
 *
 */
 
-void updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused)
+void updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused, int elapsed, int total)
 {
 	CONSOLE_SCREEN_BUFFER_INFO screen;
 	GetConsoleScreenBufferInfo(console, &screen);
@@ -121,7 +140,7 @@ void updatedisplay(std::string action, std::pair<int, int> location, std::wstrin
 	{
 		selected = v[location.first][location.second];
 	}
-	clear();
+	SetConsoleCursorPosition(console, { 0, 0 });
 	color("light gray", "black");
 	if (selected == "menu")
 	{
@@ -144,6 +163,7 @@ void updatedisplay(std::string action, std::pair<int, int> location, std::wstrin
 		std::cout << ' ';
 	}
 	std::cout << ']';
+	std::cout << ' ' << formattime(elapsed) << '/' << formattime(total);
 	color("light gray", "black");
 	std::cout << std::endl;
 	if (selected == "autosave")
