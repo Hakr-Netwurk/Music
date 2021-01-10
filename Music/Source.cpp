@@ -27,7 +27,7 @@ struct DiscordState
 std::wstring name, nowplaying;
 int next = -1, timesincestart;
 bool paused = false, discordpaused, doneplaying, discordstarted = false, idle = false;
-std::vector<std::string> supportedformats = { "mp3", "ogg", "m4a", "wma", "flac" }; // must be lowercase
+std::vector<std::string> supportedformats = { "mp3", "m4a", "wma", "flac" }; // must be lowercase
 DiscordState state{};
 discord::Core* core{};
 discord::Activity activity{};
@@ -434,7 +434,11 @@ playing_start:
 				SetCurrentDirectoryA(exepath.c_str()); // set location to where exe file is, instead of music
 				std::ofstream fout;
 				fout.open("errors.log", std::ofstream::app); // log error
-				fout << "FFmpeg Exception: " << e.what() << ";    Song: " << narrowstr << std::endl;
+				time_t timething;
+				struct tm* timeinfo;
+				time(&timething);
+				timeinfo = localtime(&timething);
+				fout << '[' << timeinfo->tm_mday << '-' << timeinfo->tm_mon + 1 << '-' << timeinfo->tm_year + 1900 << ' ' << timeinfo->tm_hour << ':' << timeinfo->tm_min << ':' << timeinfo->tm_sec << "] FFmpeg Exception: " << e.what() << ";    Song: " << narrowstr << std::endl;
 				fout.close();
 				SetCurrentDirectoryW(path.c_str());
 				next = -1;
@@ -446,7 +450,11 @@ playing_start:
 				SetCurrentDirectoryA(exepath.c_str());
 				std::ofstream fout;
 				fout.open("errors.log", std::ofstream::app); // log error
-				fout << "Mcisendstring Error: " << error << ";    Song: " << narrowstr << std::endl;
+				time_t timething;
+				struct tm* timeinfo;
+				time(&timething);
+				timeinfo = localtime(&timething);
+				fout << '[' << timeinfo->tm_mday << '-' << timeinfo->tm_mon + 1 << '-' << timeinfo->tm_year + 1900 << ' ' << timeinfo->tm_hour << ':' << timeinfo->tm_min << ':' << timeinfo->tm_sec << "] Mcisendstring Error: " << error << ";    Song: " << narrowstr << std::endl;
 				fout.close();
 				SetCurrentDirectoryW(path.c_str());
 				next = -1;
