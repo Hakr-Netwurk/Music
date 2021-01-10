@@ -99,7 +99,7 @@ _    <<   |>   >>    ↔
 *
 */
 
-void updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused, int elapsed, int total)
+std::string updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused, int elapsed, int total)
 {
 	CONSOLE_SCREEN_BUFFER_INFO screen;
 	GetConsoleScreenBufferInfo(console, &screen);
@@ -217,4 +217,5 @@ void updatedisplay(std::string action, std::pair<int, int> location, std::wstrin
 	GetConsoleCursorInfo(console, &cursorinfo);
 	cursorinfo.bVisible = false;
 	SetConsoleCursorInfo(console, &cursorinfo);
+	return selected;
 }

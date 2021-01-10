@@ -482,6 +482,9 @@ playing_start:
 					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow()))
 					{
 						Sleep(1);
+						if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) {
+							updatedisplay("null", getcurrentlocation("prev"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
+						}
 					}
 					while (GetAsyncKeyState(179) || GetAsyncKeyState(32))
 					{
@@ -535,6 +538,9 @@ playing_start:
 					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow()))
 					{
 						Sleep(1);
+						if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) {
+							updatedisplay("null", getcurrentlocation("prev"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
+						}
 					}
 					while (GetAsyncKeyState(179) || GetAsyncKeyState(32))
 					{
@@ -550,6 +556,9 @@ playing_start:
 					//std::cout << "Now Playing: " << s << std::endl;
 					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
 					paused = false;
+				}
+				if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) {
+					updatedisplay("null", getcurrentlocation("prev"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
 				}
 			}
 			mciSendString("close CURR_SND", NULL, 0, 0);
