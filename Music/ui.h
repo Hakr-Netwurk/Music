@@ -5,7 +5,7 @@
 
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 
-int colortonum(std::string str)
+int colortonum(std::string str) // translate color string to a number
 {
 	std::vector<std::string> v = { "black", "dark blue", "dark green", "dark cyan", "dark red", "dark magenta", "dark yellow", "light gray", "dark gray", "blue", "green", "cyan", "red", "magenta", "yellow", "white" };
 	for (int i = 0; i < v.size(); i++)
@@ -18,12 +18,12 @@ int colortonum(std::string str)
 	return -1;
 }
 
-void color(std::string text, std::string background)
+void color(std::string text, std::string background) // set console text colors accordingly
 {
 	SetConsoleTextAttribute(console, colortonum(text) + colortonum(background) * 16);
 }
 
-std::string formattime(int timestamp)
+std::string formattime(int timestamp) // formats the time to a readable dd:hh:mm:ss
 {
 	std::string seconds, minutes, hours, days, finalstr;
 	seconds = std::to_string(timestamp % 60);
@@ -57,7 +57,7 @@ std::string formattime(int timestamp)
 	return finalstr;
 }
 
-std::pair<int, int> getcurrentlocation(std::string str)
+std::pair<int, int> getcurrentlocation(std::string str) // get location of string (eg "pauseplay")
 {
 	if (str == "menu")
 	{
@@ -65,9 +65,9 @@ std::pair<int, int> getcurrentlocation(std::string str)
 	}
 	if (str == "progbar")
 	{
-		return std::make_pair(2, 1);
+		return std::make_pair(2, 3);
 	}
-	if (str == "autosave")
+	if (str == "help")
 	{
 		return std::make_pair(3, 1);
 	}
@@ -85,7 +85,7 @@ std::pair<int, int> getcurrentlocation(std::string str)
 	}
 	if (str == "volume")
 	{
-		return std::make_pair(4, 5);
+		return std::make_pair(3, 5);
 	}
 }
 
@@ -99,19 +99,20 @@ _    <<   |>   >>    ↔
 *
 */
 
-std::string updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused, int elapsed, int total)
+std::string updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused, int elapsed, int total) // updates console text (duh)
 {
 	CONSOLE_SCREEN_BUFFER_INFO screen;
 	GetConsoleScreenBufferInfo(console, &screen);
 	std::string selected, narrowname = std::string(name.begin(), name.end());
-	std::vector<std::vector<std::string>> v =
+	std::vector<std::vector<std::string>> v = // lookup table for different things
 	{
 		{ "null", "null", "null" },
-		{ "null", "menu", "null" },
+		{ "null", "menu", "menu", "menu", "null" },
 		{ "null", "progbar", "progbar", "progbar", "progbar", "progbar", "null" },
-		{ "null", "autosave", "prev", "pauseplay", "next", "volume", "null" },
+		{ "null", "help", "prev", "pauseplay", "next", "volume", "null" },
 		{ "null", "null", "null", "null", "null", "null", "null" }
 	};
+	// position selected accordingly
 	if (action == "up")
 	{
 		selected = v[location.first - 1][location.second];
@@ -128,6 +129,7 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	{
 		selected = v[location.first][location.second + 1];
 	}
+	// if user presses enter
 	if (action == "enter")
 	{
 		selected = v[location.first][location.second];
@@ -136,17 +138,18 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			paused = !paused;
 		}
 	}
-	if (action == "null")
+	// for out of bounds, or updatedisplay without user input
+	if (action == "null" || selected == "null")
 	{
 		selected = v[location.first][location.second];
 	}
 	SetConsoleCursorPosition(console, { 0, 0 });
 	color("light gray", "black");
-	if (selected == "menu")
+	if (selected == "menu") // if the selected is the menu, invert the colors to show it's selected
 	{
 		color("black", "light gray");
 	}
-	std::cout << char(240);
+	std::cout << char(240); // menu character
 	color("light gray", "black");
 	std::cout << std::endl << std::endl << narrowname << std::endl;
 	if (selected == "progbar")
@@ -158,7 +161,7 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	{
 		std::cout << '-';
 	}
-	for (int i = numbars; i < 20; i++)
+	for (int i = numbars; i < 20; i++) // fill the rest with space
 	{
 		std::cout << ' ';
 	}
@@ -166,18 +169,11 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	std::cout << ' ' << formattime(elapsed) << '/' << formattime(total);
 	color("light gray", "black");
 	std::cout << std::endl;
-	if (selected == "autosave")
+	if (selected == "help")
 	{
 		color("black", "light gray");
 	}
-	if (autosaveon)
-	{
-		std::cout << char(251);
-	}
-	else
-	{
-		std::cout << '_';
-	}
+	std::cout << "?";
 	color("light gray", "black");
 	std::cout << "    ";
 	if (selected == "prev")
@@ -215,7 +211,8 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	std::cout << char(29);
 	CONSOLE_CURSOR_INFO cursorinfo;
 	GetConsoleCursorInfo(console, &cursorinfo);
-	cursorinfo.bVisible = false;
+	cursorinfo.bVisible = false; // make cursor invisible so it doesnt flash
 	SetConsoleCursorInfo(console, &cursorinfo);
-	return selected;
+	color("light gray", "black"); // reset text color
+	return selected; // return the new selected
 }

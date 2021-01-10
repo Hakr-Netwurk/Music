@@ -17,7 +17,7 @@
 #include "ffmpeg/ffmpegcpp.h"
 #include "ui.h"
 
-#define volume "10" // out of 100
+#define volume "50" // out of 100
 
 struct DiscordState
 {
@@ -34,16 +34,7 @@ discord::Activity activity{};
 discord::ActivityTimestamps timestamp{};
 std::wstring path;
 
-/* Utilities and macros */
-void mcido(const char* str) {
-	mciSendStringA(str, NULL, 0, 0);
-}
-
-void mcidoW(LPCWSTR str) {
-	mciSendStringW(str, NULL, 0, 0);
-}
-
-int morerand(int n)
+int morerand(int n) // different pseudorandom number generator for shuffling
 {
 	long double cur = long double(rand() % 1000) / 1000;
 	n = n % 10000;
@@ -54,7 +45,7 @@ int morerand(int n)
 	return cur * 1000000;
 }
 
-void shuffle(std::vector<int>& curlist, int n)
+void shuffle(std::vector<int>& curlist, int n) // shuffle songs
 {
 	int last, last2, last3, temp;
 	std::set<int> used;
@@ -107,7 +98,7 @@ void shuffle(std::vector<int>& curlist, int n)
 	}
 }
 
-void discordthing()
+void discordthing() // discord status
 {
 	std::wstring lastplaying;
 	while (true)
@@ -124,6 +115,7 @@ void discordthing()
 		state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
 		while (true)
 		{
+			// run callbacks
 			std::this_thread::sleep_for(std::chrono::milliseconds(16));
 			state.core->RunCallbacks();
 			if (doneplaying)
@@ -142,11 +134,11 @@ void discordthing()
 				state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
 				idle = false;
 			}
-			if (nowplaying != lastplaying)
+			if (nowplaying != lastplaying) // if song name is different, update status to new song
 			{
 				break;
 			}
-			if (paused && !discordpaused)
+			if (paused && !discordpaused) // if paused, set status accordingly
 			{
 				activity.SetState("paused");
 				timestamp.SetStart(time(NULL));
@@ -154,10 +146,10 @@ void discordthing()
 				state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
 				discordpaused = true;
 			}
-			if (discordpaused && !paused)
+			if (discordpaused && !paused) // if unpaused, set status accordingly
 			{
 				activity.SetState("");
-				timestamp.SetStart(time(NULL) - timesincestart / 1000);
+				timestamp.SetStart(time(NULL) - timesincestart / 1000); // go back to old timestamp (before paused)
 				activity.GetTimestamps() = timestamp;
 				state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
 				discordpaused = false;
@@ -167,7 +159,7 @@ void discordthing()
 }
 
 
-void startdiscord()
+void startdiscord() // start discord thing (duh)
 {
 	activity.SetType(discord::ActivityType::Playing);
 	auto response = discord::Core::Create(777048406639116309, DiscordCreateFlags_Default, &core);
@@ -185,7 +177,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 	return FALSE;
 }
 
-bool getdiscord()
+bool getdiscord() // if Discord.exe is open
 {
 	DWORD pid = 0;
 	PCSTR name = "Discord.exe";
@@ -225,18 +217,19 @@ int main(int argc, char* argv[])
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
 	int n = 0, ind = -1, thyme, lastbar, lastsec;
 	const char* c;
-	std::string temp;
+	std::string temp, location, exepath;
 	std::wstring str;
 	std::vector<int> curlist, list;
 	std::vector<std::wstring> v;
-	INPUT input;
-	input.type = INPUT_KEYBOARD;
-	input.ki.dwFlags = KEYEVENTF_KEYUP;
-	input.ki.time = 0;
-	input.ki.wVk = 7;
 	std::wifstream fin;
 	std::wofstream fout;
-	if (argc > 1)
+	exepath = argv[0];
+	while (exepath[exepath.length() - 1] != '\\')
+	{
+		exepath.erase(exepath.end() - 1);
+	}
+	exepath.erase(exepath.end() - 1);
+	if (argc > 1) // for "open with"
 	{
 		temp = argv[1];
 		path = std::wstring(temp.begin(), temp.end());
@@ -249,12 +242,12 @@ int main(int argc, char* argv[])
 		curlist.push_back(0);
 		v.push_back(str);
 		n = 1;
-		goto playing_start;
+		goto playing_start; // skip stuff bc we don't need it
 	}
 	fin.open("path");
-	getline(fin, path);
+	getline(fin, path); // get path name from file
 	fin.close();
-	if (path == L"")
+	if (path == L"") // if no path name in file, ask for path
 	{
 		std::cout << "What folder are your songs located in? [Or put the path in the \"path\" file in the sources dir]" << std::endl;
 		std::getline(std::wcin, path);
@@ -263,16 +256,16 @@ int main(int argc, char* argv[])
 		fout.close();
 		system("CLS");
 	}
-	SetCurrentDirectoryW(path.c_str());
-	for (const auto& entry : std::filesystem::directory_iterator(path))
+	SetCurrentDirectoryW(path.c_str()); // set directory to path
+	for (const auto& entry : std::filesystem::directory_iterator(path)) // get files in path directory
 	{
 		str = entry.path().wstring();
 		v.push_back(str);
 		n++;
 		curlist.push_back(n - 1);
 	}
-	thyme = clock();
 playing_start:
+	thyme = clock(); // time when song starts
 	if (getdiscord())
 	{
 		startdiscord();
@@ -283,9 +276,9 @@ playing_start:
 		next = -1;
 		for (int i = 0; i < n; i++)
 		{
-			if (next == -1)
+			if (next == -1) // normal
 			{
-				if (i != (ind + 1) % n)
+				if (i != (ind + 1) % n) // if out of sync (previous song), then get back in sync
 				{
 					next = list[ind];
 					i--;
@@ -302,7 +295,7 @@ playing_start:
 				if (ind > 0)
 				{
 					ind--;
-					if (clock() - thyme >= 3000)
+					if (clock() - thyme >= 3000) // if more than 3 seconds since song start, go to start of song instead of prev song
 					{
 						ind++;
 					}
@@ -311,12 +304,12 @@ playing_start:
 				next = list[ind];
 			}
 			str = v[next];
-			if (str.length() <= 4)
+			if (str.length() <= 4) // if filename is somehow shorter than 4 characters
 			{
 				continue;
 			}
 			name.clear();
-			for (int j = str.length() - 1; j >= 0; j--)
+			for (int j = str.length() - 1; j >= 0; j--) // set name to str without the path
 			{
 				if (str[j] == '\\')
 				{
@@ -325,14 +318,14 @@ playing_start:
 				name.insert(name.begin(), str[j]);
 			}
 			system("CLS");
-			name.erase(name.end() - 4, name.end());
+			name.erase(name.end() - 4, name.end()); // get rid of file extension
 			std::string narrowstr, tempstr;
 			tempstr.clear();
 			narrowstr.clear();
-			if (!(str[str.length() - 1] == 'v' && str[str.length() - 2] == 'a' && str[str.length() - 3] == 'w' && str[str.length() - 4] == '.'))
+			if (!(str[str.length() - 1] == 'v' && str[str.length() - 2] == 'a' && str[str.length() - 3] == 'w' && str[str.length() - 4] == '.')) // if str isn't a .wav file
 			{
 				int format = -1;
-				for (int j = 0; j < supportedformats.size(); j++)
+				for (int j = 0; j < supportedformats.size(); j++) // check if any of the supported formats matches
 				{
 					bool mismatch = false;;
 					for (int k = 0; k < supportedformats[j].size(); k++)
@@ -358,20 +351,20 @@ playing_start:
 					{
 						mismatch = true;
 					}
-					if (mismatch)
+					if (mismatch) // if not current format
 					{
 						continue;
 					}
-					else
+					else // if current format
 					{
 						format = j;
 						break;
 					}
 				}
-				if (format == -1)
+				if (format == -1) // if format isn't supported, get new song
 				{
-					continue;
 					next = -1;
+					continue;
 				}
 				/*for (int k = 0; k < name.length(); k++)
 				{
@@ -414,94 +407,139 @@ playing_start:
 			}
 			/*else
 			{
-				
+
 			}*/
-			for (int i = str.length() - 1; i >= 0; i--)
+			for (int i = str.length() - 1; i >= 0; i--) // erase path part of str
 			{
 				if (str[i] == '\\')
 				{
 					str.erase(str.begin(), str.begin() + i + 1);
 				}
 			}
-			SetWindowTextW(GetConsoleWindow(), name.c_str());
-			//std::string s(name.begin(), name.end());
-			//std::cout << "Now Playing: " << s << std::endl;
-			std::clock_t start = clock();
+			SetWindowTextW(GetConsoleWindow(), name.c_str()); // set window title to name
+			std::clock_t start = clock(); // starting time
 			narrowstr.clear();
-			for (int j = 0; j < str.length(); j++)
+			for (int j = 0; j < str.length(); j++) // narrowstr is the non wstring version of str
 			{
 				narrowstr.push_back(str[j]);
 			}
-			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
-			ffmpegcpp::ContainerInfo info = demuxer->GetInfo();
-			mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0);
-			updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds);
+			ffmpegcpp::ContainerInfo info;
+			try
+			{
+				ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+				info = demuxer->GetInfo(); // get total length of song
+			}
+			catch (ffmpegcpp::FFmpegException e) // if it fails (will fail if song has unicode)
+			{
+				SetCurrentDirectoryA(exepath.c_str()); // set location to where exe file is, instead of music
+				std::ofstream fout;
+				fout.open("errors.log", std::ofstream::app); // log error
+				fout << "FFmpeg Exception: " << e.what() << ";    Song: " << narrowstr << std::endl;
+				fout.close();
+				SetCurrentDirectoryW(path.c_str());
+				next = -1;
+				continue; // next song
+			}
+			int error = mciSendStringW((std::wstring(L"open \"") + str + std::wstring(L"\" alias CURR_SND")).c_str(), NULL, 0, 0); // open song
+			if (error != 0) // if mcisendstring has error
+			{
+				SetCurrentDirectoryA(exepath.c_str());
+				std::ofstream fout;
+				fout.open("errors.log", std::ofstream::app); // log error
+				fout << "Mcisendstring Error: " << error << ";    Song: " << narrowstr << std::endl;
+				fout.close();
+				SetCurrentDirectoryW(path.c_str());
+				next = -1;
+				continue; // next song
+			}
+			location = updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds); // update the console ui
 			nowplaying = name;
-			mciSendStringA("play CURR_SND", NULL, 0, 0);
-			mciSendStringA(("setaudio CURR_SND volume to " + std::string(volume)).c_str(), NULL, 0, 0);
+			mciSendStringA("play CURR_SND", NULL, 0, 0); // play the song
+			mciSendStringA(("setaudio CURR_SND volume to " + std::string(volume)).c_str(), NULL, 0, 0); // set volume
 			thyme = clock();
 			lastbar = 0;
 			lastsec = 0;
-			for (int j = 0; j < info.durationInSeconds * 10; j++)
+			while (true)
 			{
-				Sleep(100);
+				Sleep(10);
 				GetAsyncKeyState(176);
 				GetAsyncKeyState(177);
 				GetAsyncKeyState(179);
 				GetAsyncKeyState(32);
 				clock_t current = clock();
-				if (((current - start) / 1000) / info.durationInSeconds * 20 > lastbar)
+				if (((current - start) / 1000.0) / info.durationInSeconds * 20 > lastbar) // update bar count
 				{
 					lastbar = ((current - start) / 1000) / info.durationInSeconds * 20;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
+					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
 				}
-				if (current - start >= info.durationInSeconds * 1000)
+				if (current - start >= info.durationInSeconds * 1000) // if song is over
 				{
 					break;
 				}
-				if ((current - start) / 1000 > lastsec)
+				if ((current - start) / 1000 > lastsec) // update second count
 				{
 					lastsec = (current - start) / 1000;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
 				}
-				if (GetAsyncKeyState(179))
+				if (GetAsyncKeyState(179) || (GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())) // if paused
 				{
-					mciSendString("pause CURR_SND", NULL, 0, 0);
-					clock_t current = clock();
-					SetConsoleTitleW(L"PAUSED");
-					//std::string s(name.begin(), name.end());
-					//system("CLS");
-					//std::cout << "PAUSED: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, (current - start) / 1000, info.durationInSeconds);
+					mciSendString("pause CURR_SND", NULL, 0, 0); // pause
+					clock_t current = clock(); // get paused time
+					SetConsoleTitleW(L"PAUSED"); // set window name to PAUSED
+					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, true, lastsec, info.durationInSeconds); // update console ui to paused
 					paused = true;
 					timesincestart = current - start;
-					while (GetAsyncKeyState(179))
+					while (GetAsyncKeyState(179)) // while the key is held
 					{
 						Sleep(1);
 					}
-					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow()))
+					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())) // until user unpauses
 					{
 						Sleep(1);
-						if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) {
-							updatedisplay("null", getcurrentlocation("prev"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
+						if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) // check for left arrow key
+						{
+							while (GetAsyncKeyState(VK_LEFT))
+							{
+								Sleep(1);
+							}
+							location = updatedisplay("left", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // move "cursor" left
+						}
+						if (GetAsyncKeyState(VK_RIGHT) && GetForegroundWindow() == GetConsoleWindow())
+						{
+							while (GetAsyncKeyState(VK_RIGHT))
+							{
+								Sleep(1);
+							}
+							location = updatedisplay("right", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+						}
+						if (GetAsyncKeyState(VK_UP) && GetForegroundWindow() == GetConsoleWindow())
+						{
+							while (GetAsyncKeyState(VK_UP))
+							{
+								Sleep(1);
+							}
+							location = updatedisplay("up", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+						}
+						if (GetAsyncKeyState(VK_DOWN) && GetForegroundWindow() == GetConsoleWindow())
+						{
+							while (GetAsyncKeyState(VK_DOWN))
+							{
+								Sleep(1);
+							}
+							location = updatedisplay("down", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
 						}
 					}
-					while (GetAsyncKeyState(179) || GetAsyncKeyState(32))
+					while (GetAsyncKeyState(179) || GetAsyncKeyState(32)) // while key is held
 					{
 						Sleep(1);
 					}
-					demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
-					info = demuxer->GetInfo();
-					start = clock() - current + start;
-					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
-					SetConsoleTitleW(name.c_str());
-					//s = std::string(name.begin(), name.end());
-					//system("CLS");
-					//std::cout << "Now Playing: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
+					start = clock() - current + start; // set the start time to account for paused time
+					mciSendStringW(L"play CURR_SND", NULL, 0, 0); // resume the song
+					SetConsoleTitleW(name.c_str()); // set window name
+					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // update to unpause in console ui
 					paused = false;
 				}
-				if (GetAsyncKeyState(177))
+				if (GetAsyncKeyState(177)) // previous song
 				{
 					mciSendString("close CURR_SND", NULL, 0, 0);
 					while (GetAsyncKeyState(177))
@@ -511,7 +549,7 @@ playing_start:
 					next = -2;
 					break;
 				}
-				if (GetAsyncKeyState(176))
+				if (GetAsyncKeyState(176)) // next song
 				{
 					mciSendString("close CURR_SND", NULL, 0, 0);
 					while (GetAsyncKeyState(176))
@@ -520,51 +558,41 @@ playing_start:
 					}
 					break;
 				}
-				if (GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())
+				if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) // if left arrow key is pressed
 				{
-					mciSendString("pause CURR_SND", NULL, 0, 0);
-					clock_t current = clock();
-					SetConsoleTitleW(L"PAUSED");
-					//std::string s(name.begin(), name.end());
-					//system("CLS");
-					//std::cout << "PAUSED: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, true, (current - start) / 1000, info.durationInSeconds);
-					paused = true;
-					timesincestart = current - start;
-					while (GetAsyncKeyState(0x20))
+					while (GetAsyncKeyState(VK_LEFT))
 					{
 						Sleep(1);
 					}
-					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow()))
-					{
-						Sleep(1);
-						if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) {
-							updatedisplay("null", getcurrentlocation("prev"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
-						}
-					}
-					while (GetAsyncKeyState(179) || GetAsyncKeyState(32))
-					{
-						Sleep(1);
-					}
-					demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
-					info = demuxer->GetInfo();
-					start = clock() - current + start;
-					mciSendStringW(L"play CURR_SND", NULL, 0, 0);
-					SetConsoleTitleW(name.c_str());
-					//s = std::string(name.begin(), name.end());
-					//system("CLS");
-					//std::cout << "Now Playing: " << s << std::endl;
-					updatedisplay("null", getcurrentlocation("pauseplay"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
-					paused = false;
+					location = updatedisplay("left", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // move "cursor" left
 				}
-				if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) {
-					updatedisplay("null", getcurrentlocation("prev"), name, lastbar, true, false, (current - start) / 1000, info.durationInSeconds);
+				if (GetAsyncKeyState(VK_RIGHT) && GetForegroundWindow() == GetConsoleWindow())
+				{
+					while (GetAsyncKeyState(VK_RIGHT))
+					{
+						Sleep(1);
+					}
+					location = updatedisplay("right", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+				}
+				if (GetAsyncKeyState(VK_UP) && GetForegroundWindow() == GetConsoleWindow())
+				{
+					while (GetAsyncKeyState(VK_UP))
+					{
+						Sleep(1);
+					}
+					location = updatedisplay("up", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+				}
+				if (GetAsyncKeyState(VK_DOWN) && GetForegroundWindow() == GetConsoleWindow())
+				{
+					while (GetAsyncKeyState(VK_DOWN))
+					{
+						Sleep(1);
+					}
+					location = updatedisplay("down", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
 				}
 			}
 			mciSendString("close CURR_SND", NULL, 0, 0);
-			DeleteFileW(str.c_str());
-			delete demuxer;
-			if (next != -2)
+			if (next != -2) // if not previous song, set next to normal
 			{
 				next = -1;
 			}
