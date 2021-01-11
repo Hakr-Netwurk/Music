@@ -497,7 +497,7 @@ playing_start:
 					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, true, lastsec, info.durationInSeconds); // update console ui to paused
 					paused = true;
 					timesincestart = current - start;
-					while (GetAsyncKeyState(179)) // while the key is held
+					while (GetAsyncKeyState(179) || GetAsyncKeyState(32)) // while the key is held
 					{
 						Sleep(1);
 					}
