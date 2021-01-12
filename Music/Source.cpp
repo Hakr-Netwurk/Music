@@ -414,6 +414,7 @@ playing_start:
 				if (str[i] == '\\')
 				{
 					str.erase(str.begin(), str.begin() + i + 1);
+					break;
 				}
 			}
 			SetWindowTextW(GetConsoleWindow(), name.c_str()); // set window title to name
