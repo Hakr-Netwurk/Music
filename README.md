@@ -9,5 +9,7 @@ To use a released version of Music, follow the same procedure as above, except g
   
 Installer might be a thing in the future, unsure for now.  
   
+Next release of Music will probably be after the UI is finished.  
+  
 Written by: [supsm](http://github.com/supsm)  
 Helper(s): [Vbbab](http://github.com/Vbbab)  
