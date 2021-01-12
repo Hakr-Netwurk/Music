@@ -1,7 +1,7 @@
 .vs
 Music.zip
+*.dll
 x64/Debug
-x64/Release/*.dll
 x64/Release/path
 x64/Release/errors.log
 Music/path
