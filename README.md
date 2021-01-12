@@ -1,5 +1,5 @@
 # Music
-A simple CLI music playing program that has better shuffling than standard music players.
+A lightweight CLI music playing program that has better shuffling than standard music players. Isn't complete yet, many things will break. With that said, "normal" mp3 and wav files can be played.
 
 
 
