@@ -27,7 +27,7 @@ struct DiscordState
 std::wstring name, nowplaying;
 int next = -1, timesincestart;
 bool paused = false, discordpaused, doneplaying, discordstarted = false, idle = false;
-std::vector<std::string> supportedformats = { "mp3", "m4a", "wma", "flac" }; // must be lowercase
+std::vector<std::string> supportedformats = { "mp3", "m4a", "wma", "flac", "ogg"}; // must be lowercase
 DiscordState state{};
 discord::Core* core{};
 discord::Activity activity{};
@@ -366,49 +366,7 @@ playing_start:
 					next = -1;
 					continue;
 				}
-				/*for (int k = 0; k < name.length(); k++)
-				{
-					narrowstr.push_back(name[k]);
-				}
-				narrowstr += ".";
-				narrowstr += supportedformats[format];
-				tempstr = "[ssmtemp]";
-				tempstr += narrowstr;
-				tempstr.erase(tempstr.end() - 4, tempstr.end());
-				tempstr += ".mp3";
-				ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str());
-				ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
-				ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-				ffmpegcpp::Filter* filter = new ffmpegcpp::Filter("volume=1", encoder);
-				ffmpegcpp::Demuxer* audioFile = new ffmpegcpp::Demuxer(narrowstr.c_str());
-				audioFile->DecodeBestAudioStream(filter);
-				audioFile->PreparePipeline();
-				while (!audioFile->IsDone())
-				{
-					audioFile->Step();
-				}
-				muxer->Close();
-				delete muxer;
-				delete codec;
-				delete encoder;
-				delete audioFile;
-				delete filter;
-				system("CLS");
-				name.clear();
-				for (int k = 0; k < narrowstr.length() - 4; k++)
-				{
-					name.push_back(narrowstr[k]);
-				}
-				str.clear();
-				for (int k = 0; k < tempstr.length(); k++)
-				{
-					str.push_back(tempstr[k]);
-				}*/
 			}
-			/*else
-			{
-
-			}*/
 			for (int i = str.length() - 1; i >= 0; i--) // erase path part of str
 			{
 				if (str[i] == '\\')
@@ -417,17 +375,33 @@ playing_start:
 					break;
 				}
 			}
+			for (int k = 0; k < str.length(); k++) // narrowstr is non-wide str (duh)
+			{
+				narrowstr.push_back(str[k]);
+			}
+			std::cout << "Loading Song..." << std::endl;
+			tempstr = exepath + '\\' + narrowstr + ".mp3"; // append .mp3 to file name
+			ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str()); // this part is to get rid of VBR (mcierror 277) and convert to mp3
+			ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
+			ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
+			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+			demuxer->DecodeBestAudioStream(encoder);
+			demuxer->PreparePipeline();
+			while (!demuxer->IsDone())
+			{
+				demuxer->Step();
+			}
+			muxer->Close();
+			delete muxer;
+			delete codec;
+			delete encoder; // cleanup
+			str = std::wstring(exepath.begin(), exepath.end()) + L'\\' + str + L".mp3";
 			SetWindowTextW(GetConsoleWindow(), name.c_str()); // set window title to name
 			std::clock_t start = clock(); // starting time
-			narrowstr.clear();
-			for (int j = 0; j < str.length(); j++) // narrowstr is the non wstring version of str
-			{
-				narrowstr.push_back(str[j]);
-			}
 			ffmpegcpp::ContainerInfo info;
 			try
 			{
-				ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+				demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str()); // reuse demuxer because we can
 				info = demuxer->GetInfo(); // get total length of song
 			}
 			catch (ffmpegcpp::FFmpegException e) // if it fails (will fail if song has unicode)
@@ -461,6 +435,7 @@ playing_start:
 				next = -1;
 				continue; // next song
 			}
+			system("CLS");
 			location = updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds); // update the console ui
 			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0); // play the song
