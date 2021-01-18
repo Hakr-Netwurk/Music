@@ -2,6 +2,7 @@
 #pragma comment(lib, "Winmm.lib")
 #include <algorithm>
 #include <ctime>
+#include <direct.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -215,10 +216,10 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
-	int n = 0, ind = -1, thyme, lastbar, lastsec;
+	int n = 0, ind = -1, thyme, lastbar, lastsec, foldernum = -1, tempnum = 0;
 	const char* c;
 	std::string temp, location, exepath;
-	std::wstring str;
+	std::wstring str, temppath;
 	std::vector<int> curlist, list;
 	std::vector<std::wstring> v;
 	std::wifstream fin;
@@ -265,6 +266,28 @@ int main(int argc, char* argv[])
 		curlist.push_back(n - 1);
 	}
 playing_start:
+	SetCurrentDirectoryA(exepath.c_str()); // set directory to exe directory, not songs
+	fin.open("paths");
+	while (fin) // find which folder temporary files are stored in
+	{
+		getline(fin, temppath);
+		if (temppath == path)
+		{
+			foldernum = tempnum;
+			break;
+		}
+		tempnum++;
+	}
+	fin.close();
+	if (foldernum == -1) // if folder not found, create it
+	{
+		fout.open("paths", std::ofstream::app);
+		fout << path << std::endl;
+		foldernum = tempnum;
+		fout.close();
+		_mkdir((exepath + '\\' + std::to_string(foldernum)).c_str());
+	}
+	SetCurrentDirectoryW(path.c_str()); // reset directory
 	thyme = clock(); // time when song starts
 	if (getdiscord())
 	{
@@ -380,28 +403,52 @@ playing_start:
 				narrowstr.push_back(str[k]);
 			}
 			std::cout << "Loading Song..." << std::endl;
-			tempstr = exepath + '\\' + narrowstr + ".mp3"; // append .mp3 to file name
-			ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str()); // this part is to get rid of VBR (mcierror 277) and convert to mp3
-			ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
-			ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
-			demuxer->DecodeBestAudioStream(encoder);
-			demuxer->PreparePipeline();
-			while (!demuxer->IsDone())
+			tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + narrowstr + ".mp3"; // append .mp3 to file name
+			fin.open(tempstr);
+			if (!fin.good()) // check if file exists
 			{
-				demuxer->Step();
+				// if file does not exist, create it
+				try
+				{
+					ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str()); // this part is to get rid of VBR (mcierror 277) and convert to mp3
+					ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
+					ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
+					ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+					demuxer->DecodeBestAudioStream(encoder);
+					demuxer->PreparePipeline();
+					while (!demuxer->IsDone())
+					{
+						demuxer->Step();
+					}
+					muxer->Close();
+					delete muxer;
+					delete codec;
+					delete encoder; // cleanup
+				}
+				catch (ffmpegcpp::FFmpegException e)
+				{
+					SetCurrentDirectoryA(exepath.c_str()); // set location to where exe file is, instead of music
+					std::ofstream fout;
+					fout.open("errors.log", std::ofstream::app); // log error
+					time_t timething;
+					struct tm* timeinfo;
+					time(&timething);
+					timeinfo = localtime(&timething);
+					fout << '[' << timeinfo->tm_mday << '-' << timeinfo->tm_mon + 1 << '-' << timeinfo->tm_year + 1900 << ' ' << timeinfo->tm_hour << ':' << timeinfo->tm_min << ':' << timeinfo->tm_sec << "] FFmpeg Exception: " << e.what() << ";    Song: " << narrowstr << std::endl;
+					fout.close();
+					SetCurrentDirectoryW(path.c_str());
+					next = -1;
+					continue; // next song
+				}
 			}
-			muxer->Close();
-			delete muxer;
-			delete codec;
-			delete encoder; // cleanup
-			str = std::wstring(exepath.begin(), exepath.end()) + L'\\' + str + L".mp3";
+			fin.close();
+			str = std::wstring(exepath.begin(), exepath.end()) + L'\\' + std::to_wstring(foldernum) + L'\\' + str + L".mp3";
 			SetWindowTextW(GetConsoleWindow(), name.c_str()); // set window title to name
 			std::clock_t start = clock(); // starting time
 			ffmpegcpp::ContainerInfo info;
 			try
 			{
-				demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str()); // reuse demuxer because we can
+				ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str()); // reuse demuxer because we can
 				info = demuxer->GetInfo(); // get total length of song
 			}
 			catch (ffmpegcpp::FFmpegException e) // if it fails (will fail if song has unicode)
