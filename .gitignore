@@ -6,5 +6,6 @@ x64/Release/path
 x64/Release/errors.log
 x64/Release/paths
 x64/Release/*/*.mp3
+x64/Release/*/volume
 Music/path
 Music/x64

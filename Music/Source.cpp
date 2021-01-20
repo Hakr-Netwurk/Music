@@ -18,22 +18,20 @@
 #include "ffmpeg/ffmpegcpp.h"
 #include "ui.h"
 
-#define volume "50" // out of 100
-
 struct DiscordState
 {
 	std::unique_ptr<discord::Core> core;
 };
 
-std::wstring name, nowplaying;
-int next = -1, timesincestart;
+std::wstring name, nowplaying, path;
+std::string exepath;
+int next = -1, timesincestart, foldernum = -1;
 bool paused = false, discordpaused, doneplaying, discordstarted = false, idle = false;
-std::vector<std::string> supportedformats = { "mp3", "m4a", "wma", "flac", "ogg"}; // must be lowercase
+std::vector<std::string> supportedformats = { "mp3", "m4a", "wma", "flac", "ogg" }; // must be lowercase
 DiscordState state{};
 discord::Core* core{};
 discord::Activity activity{};
 discord::ActivityTimestamps timestamp{};
-std::wstring path;
 
 int morerand(int n) // different pseudorandom number generator for shuffling
 {
@@ -205,7 +203,101 @@ bool getdiscord() // if Discord.exe is open
 	return false;
 }
 
-
+void convert(std::wstring str) // convert stuff (for multithreaded purposes)
+{
+	if (!(str[str.length() - 1] == 'v' && str[str.length() - 2] == 'a' && str[str.length() - 3] == 'w' && str[str.length() - 4] == '.')) // if str isn't a .wav file
+	{
+		int format = -1;
+		for (int j = 0; j < supportedformats.size(); j++) // check if any of the supported formats matches
+		{
+			bool mismatch = false;;
+			for (int k = 0; k < supportedformats[j].size(); k++)
+			{
+				if (str[str.length() - 1 - k] != supportedformats[j][supportedformats[j].size() - 1 - k])
+				{
+					if (str[str.length() - 1 - k] > 64 && str[str.length() - 1 - k] < 91)
+					{
+						if (str[str.length() - 1 - k] + 32 != supportedformats[j][supportedformats[j].size() - 1 - k])
+						{
+							mismatch = true;
+							break;
+						}
+					}
+					else
+					{
+						mismatch = true;
+						break;
+					}
+				}
+			}
+			if (str[str.length() - 1 - supportedformats[j].size()] != '.')
+			{
+				mismatch = true;
+			}
+			if (mismatch) // if not current format
+			{
+				continue;
+			}
+			else // if current format
+			{
+				format = j;
+				break;
+			}
+		}
+		if (format == -1) // if format isn't supported, get new song
+		{
+			next = -1;
+			return;
+		}
+	}
+	for (int i = str.length() - 1; i >= 0; i--) // erase path part of str
+	{
+		if (str[i] == '\\')
+		{
+			str.erase(str.begin(), str.begin() + i + 1);
+			break;
+		}
+	}
+	std::string narrowstr(str.begin(), str.end());
+	std::string tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + narrowstr + ".mp3";
+	std::ifstream fin;
+	fin.open(tempstr);
+	if (!fin.good()) // if file doesn't exist
+	{
+		try
+		{
+			ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str()); // this part is to get rid of VBR (mcierror 277) and convert to mp3
+			ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
+			ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
+			ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
+			demuxer->DecodeBestAudioStream(encoder);
+			demuxer->PreparePipeline();
+			while (!demuxer->IsDone())
+			{
+				demuxer->Step();
+			}
+			muxer->Close();
+			delete muxer;
+			delete codec;
+			delete encoder; // cleanup
+		}
+		catch (ffmpegcpp::FFmpegException e)
+		{
+			SetCurrentDirectoryA(exepath.c_str()); // set location to where exe file is, instead of music
+			std::ofstream fout;
+			fout.open("errors.log", std::ofstream::app); // log error
+			time_t timething;
+			struct tm* timeinfo;
+			time(&timething);
+			timeinfo = localtime(&timething);
+			fout << '[' << timeinfo->tm_mday << '-' << timeinfo->tm_mon + 1 << '-' << timeinfo->tm_year + 1900 << ' ' << timeinfo->tm_hour << ':' << timeinfo->tm_min << ':' << timeinfo->tm_sec << "] FFmpeg Exception: " << e.what() << ";    Song: " << narrowstr << std::endl;
+			fout.close();
+			SetCurrentDirectoryW(path.c_str());
+			next = -1;
+			return; // next song
+		}
+	}
+}
 
 int main(int argc, char* argv[])
 {
@@ -216,12 +308,13 @@ int main(int argc, char* argv[])
 		return -2;
 	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
-	int n = 0, ind = -1, thyme, lastbar, lastsec, foldernum = -1, tempnum = 0;
+	int n = 0, ind = -1, thyme, lastbar, lastsec, tempnum = 0;
 	const char* c;
-	std::string temp, location, exepath;
+	std::string temp, location;
 	std::wstring str, temppath;
-	std::vector<int> curlist, list;
+	std::vector<int> curlist, list, volume;
 	std::vector<std::wstring> v;
+	std::vector<std::thread> tv;
 	std::wifstream fin;
 	std::wofstream fout;
 	exepath = argv[0];
@@ -286,6 +379,113 @@ playing_start:
 		foldernum = tempnum;
 		fout.close();
 		_mkdir((exepath + '\\' + std::to_string(foldernum)).c_str());
+	}
+	int threads = max(std::thread::hardware_concurrency() / 2, 1);
+	tv.resize(threads);
+	tempnum = 0;
+	for (int i = 0; i < tv.size(); i++)
+	{
+		tv[i] = std::thread(convert, v[i + tempnum]);
+	}
+	while (tempnum <= v.size() - threads)
+	{
+		for (int i = 0; i < tv.size(); i++)
+		{
+			tv[i].join();
+			tv[i] = std::thread(convert, v[i + tempnum]);
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), { 0, 0 });
+			std::cout << "Loading Songs: " << i + tempnum << '/' << v.size() << std::endl;
+		}
+		tempnum += threads;
+		if (tempnum > v.size() - threads)
+		{
+			tempnum = v.size() - threads + 1;
+		}
+	}
+	SetCurrentDirectoryA((exepath + '\\' + std::to_string(foldernum)).c_str());
+	std::ifstream ffin;
+	ffin.open("volume");
+	volume.resize(v.size(), 100);
+	if (!ffin.good())
+	{
+		ffin.close();
+		fout.open("volume");
+		fout << "# this is a comment\n#you do not need a space after a comment\n# but you may not have anything in front of the comment\n#\n# To change the volume of a song / type of file, type it in one line\n# then in another line, enter the volume you want. Here is an example:\n# .wav\n# 50\n# this would change the volume of all wav files to 50.\n# you must specify the full filename without file path.\n# the last volume change will be the one that is used.\n#\n# extra newlines are permitted.\n# the default volume is 100.\n#\n# to change the default volume, enter \"default\" (no quotes), then the volume in the next line.\n# note that this will override previous settings.";
+		fout.close();
+	}
+	else
+	{
+		std::string tempint;
+		while (ffin)
+		{
+			getline(ffin, temp);
+			while (temp == "" || temp == " ")
+			{
+				getline(ffin, temp);
+			}
+			if (temp[0] == '#')
+			{
+				continue;
+			}
+			if (temp[0] == '.')
+			{
+				getline(ffin, tempint);
+				while (tempint == "" || tempint == " ")
+				{
+					getline(ffin, tempint);
+				}
+				for (int i = 0; i < v.size(); i++)
+				{
+					bool mismatch = false;
+					for (int j = 0; j < temp.length(); j++)
+					{
+						if (v[i][v[i].size() - temp.length() + j] != temp[j])
+						{
+							mismatch = true;
+							break;
+						}
+					}
+					if (!mismatch)
+					{
+						volume[i] = stoi(tempint);
+					}
+				}
+			}
+			else if (temp == "default")
+			{
+				getline(ffin, tempint);
+				while (tempint == "" || tempint == " ")
+				{
+					getline(ffin, tempint);
+				}
+				volume.clear();
+				volume.resize(v.size(), stoi(tempint));
+			}
+			else
+			{
+				getline(ffin, tempint);
+				while (tempint == "" || tempint == " ")
+				{
+					getline(ffin, tempint);
+				}
+				for (int i = 0; i < v.size(); i++)
+				{
+					bool mismatch = false;
+					for (int j = 0; j < temp.length(); j++)
+					{
+						if (v[i][j] != temp[j])
+						{
+							mismatch = true;
+							break;
+						}
+					}
+					if (!mismatch)
+					{
+						volume[i] = stoi(tempint);
+					}
+				}
+			}
+		}
 	}
 	SetCurrentDirectoryW(path.c_str()); // reset directory
 	thyme = clock(); // time when song starts
@@ -402,46 +602,7 @@ playing_start:
 			{
 				narrowstr.push_back(str[k]);
 			}
-			std::cout << "Loading Song..." << std::endl;
 			tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + narrowstr + ".mp3"; // append .mp3 to file name
-			fin.open(tempstr);
-			if (!fin.good()) // check if file exists
-			{
-				// if file does not exist, create it
-				try
-				{
-					ffmpegcpp::Muxer* muxer = new ffmpegcpp::Muxer(tempstr.c_str()); // this part is to get rid of VBR (mcierror 277) and convert to mp3
-					ffmpegcpp::AudioCodec* codec = new ffmpegcpp::AudioCodec(AV_CODEC_ID_MP3);
-					ffmpegcpp::AudioEncoder* encoder = new ffmpegcpp::AudioEncoder(codec, muxer);
-					ffmpegcpp::Demuxer* demuxer = new ffmpegcpp::Demuxer(narrowstr.c_str());
-					demuxer->DecodeBestAudioStream(encoder);
-					demuxer->PreparePipeline();
-					while (!demuxer->IsDone())
-					{
-						demuxer->Step();
-					}
-					muxer->Close();
-					delete muxer;
-					delete codec;
-					delete encoder; // cleanup
-				}
-				catch (ffmpegcpp::FFmpegException e)
-				{
-					SetCurrentDirectoryA(exepath.c_str()); // set location to where exe file is, instead of music
-					std::ofstream fout;
-					fout.open("errors.log", std::ofstream::app); // log error
-					time_t timething;
-					struct tm* timeinfo;
-					time(&timething);
-					timeinfo = localtime(&timething);
-					fout << '[' << timeinfo->tm_mday << '-' << timeinfo->tm_mon + 1 << '-' << timeinfo->tm_year + 1900 << ' ' << timeinfo->tm_hour << ':' << timeinfo->tm_min << ':' << timeinfo->tm_sec << "] FFmpeg Exception: " << e.what() << ";    Song: " << narrowstr << std::endl;
-					fout.close();
-					SetCurrentDirectoryW(path.c_str());
-					next = -1;
-					continue; // next song
-				}
-			}
-			fin.close();
 			str = std::wstring(exepath.begin(), exepath.end()) + L'\\' + std::to_wstring(foldernum) + L'\\' + str + L".mp3";
 			SetWindowTextW(GetConsoleWindow(), name.c_str()); // set window title to name
 			std::clock_t start = clock(); // starting time
@@ -486,7 +647,7 @@ playing_start:
 			location = updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds); // update the console ui
 			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0); // play the song
-			mciSendStringA(("setaudio CURR_SND volume to " + std::string(volume)).c_str(), NULL, 0, 0); // set volume
+			mciSendStringA(("setaudio CURR_SND volume to " + std::to_string(volume[next] * 10)).c_str(), NULL, 0, 0); // set volume
 			thyme = clock();
 			lastbar = 0;
 			lastsec = 0;
