@@ -10,7 +10,7 @@ Installer might be a thing in the future, unsure for now.
   
 Next release of Music will be after the UI is functional (soon!).  
 We are currently working on a UWP app. That means there will be no more ui changes, and the only things that will be functional in the console ui will be pause/play, previous, and next. The rest will remain there because I'm lazy.  
-There seems to be an issue where only I (supsm) can run the app, and it crashes for everyone else (so far). I will investigate this issue a bit further, but either way it *should* be fixed in the UWP version.  
+There seems to be an issue where only I (supsm) can run the app, and it crashes for some people. I will investigate this issue a bit further, but either way it *should* be fixed in the UWP version.  
   
 Written by: [supsm](http://github.com/supsm)  
 Helper(s): [Vbbab](http://github.com/Vbbab)  
