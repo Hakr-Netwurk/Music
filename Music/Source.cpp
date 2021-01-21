@@ -503,7 +503,7 @@ playing_start:
 			{
 				if (i != (ind + 1) % n) // if out of sync (previous song), then get back in sync
 				{
-					next = list[ind];
+					next = list[ind + 1];
 					i--;
 				}
 				else
