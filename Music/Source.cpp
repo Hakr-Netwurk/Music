@@ -168,14 +168,6 @@ void startdiscord() // start discord thing (duh)
 	discordstarted = true;
 }
 
-BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
-{
-	SetCurrentDirectoryW(path.c_str());
-	mciSendString("close CURR_SND", NULL, 0, 0);
-	system("del ^[ssmtemp^]*.wav");
-	return FALSE;
-}
-
 bool getdiscord() // if Discord.exe is open
 {
 	DWORD pid = 0;
@@ -250,6 +242,7 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 			return;
 		}
 	}
+	std::wstring fullpathstr = str;
 	for (int i = str.length() - 1; i >= 0; i--) // erase path part of str
 	{
 		if (str[i] == '\\')
@@ -260,6 +253,7 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 	}
 	std::string narrowstr(str.begin(), str.end());
 	std::string tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + narrowstr + ".mp3";
+	narrowstr = std::string(fullpathstr.begin(), fullpathstr.end());
 	std::ifstream fin;
 	fin.open(tempstr);
 	if (!fin.good()) // if file doesn't exist
@@ -302,11 +296,6 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 int main(int argc, char* argv[])
 {
 	SetConsoleTitle("Music");
-	if (!SetConsoleCtrlHandler(CtrlHandler, TRUE))
-	{
-		std::cout << "Ctrl handler failed." << std::endl;
-		return -2;
-	}
 	ShowWindow(GetConsoleWindow(), SW_SHOW);
 	int n = 0, ind = -1, thyme, lastbar, lastsec, tempnum = 0;
 	const char* c;
@@ -327,6 +316,7 @@ int main(int argc, char* argv[])
 	{
 		temp = argv[1];
 		path = std::wstring(temp.begin(), temp.end());
+		v.push_back(path);
 		while (path[path.size() - 1] != '\\')
 		{
 			str.insert(str.begin(), path[path.size() - 1]);
@@ -334,7 +324,6 @@ int main(int argc, char* argv[])
 		}
 		SetCurrentDirectoryW(path.c_str());
 		curlist.push_back(0);
-		v.push_back(str);
 		n = 1;
 		goto playing_start; // skip stuff bc we don't need it
 	}
@@ -378,29 +367,27 @@ playing_start:
 		fout << path << std::endl;
 		foldernum = tempnum;
 		fout.close();
-		_mkdir((exepath + '\\' + std::to_string(foldernum)).c_str());
+		std::filesystem::create_directories((exepath + '\\' + std::to_string(foldernum)).c_str());
 	}
 	int threads = max(std::thread::hardware_concurrency() / 2, 1);
 	tv.resize(threads);
 	tempnum = 0;
-	for (int i = 0; i < tv.size(); i++)
-	{
-		tv[i] = std::thread(convert, v[i + tempnum]);
-	}
-	while (tempnum <= v.size() - threads)
+	while (tempnum <= v.size() + threads)
 	{
 		for (int i = 0; i < tv.size(); i++)
 		{
-			tv[i].join();
-			tv[i] = std::thread(convert, v[i + tempnum]);
-			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), { 0, 0 });
-			std::cout << "Loading Songs: " << i + tempnum << '/' << v.size() << std::endl;
+			if (tempnum && tempnum - threads + i < v.size())
+			{
+				tv[i].join();
+			}
+			if (i + tempnum < v.size())
+			{
+				tv[i] = std::thread(convert, v[i + tempnum]);
+				SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), { 0, 0 });
+				std::cout << "Loading Songs: " << i + tempnum + 1 << '/' << v.size() << std::endl;
+			}
 		}
 		tempnum += threads;
-		if (tempnum > v.size() - threads)
-		{
-			tempnum = v.size() - threads + 1;
-		}
 	}
 	SetCurrentDirectoryA((exepath + '\\' + std::to_string(foldernum)).c_str());
 	std::ifstream ffin;
@@ -410,7 +397,7 @@ playing_start:
 	{
 		ffin.close();
 		fout.open("volume");
-		fout << "# this is a comment\n#you do not need a space after a comment\n# but you may not have anything in front of the comment\n#\n# To change the volume of a song / type of file, type it in one line\n# then in another line, enter the volume you want. Here is an example:\n# .wav\n# 50\n# this would change the volume of all wav files to 50.\n# you must specify the full filename without file path.\n# the last volume change will be the one that is used.\n#\n# extra newlines are permitted.\n# the default volume is 100.\n#\n# to change the default volume, enter \"default\" (no quotes), then the volume in the next line.\n# note that this will override previous settings.";
+		fout << "# this is a comment\n#you do not need a space after a comment\n# but you may not have anything in front of the comment\n#\n# To change the volume of a song / type of file, type it in one line\n# then in another line, enter the volume you want. Here is an example:\n# .wav\n# 50\n# this would change the volume of all wav files to 50.\n# you must specify the full filename without file path.\n# the last volume change will be the one that is used.\n#\n# extra newlines are permitted.\n# the default volume is 100.\n#\n# to change the default volume, enter \"default\" (no quotes), then the volume in the next line.\n# note that this will override previous settings.\ndefault\n100";
 		fout.close();
 	}
 	else
@@ -419,7 +406,7 @@ playing_start:
 		while (ffin)
 		{
 			getline(ffin, temp);
-			while (temp == "" || temp == " ")
+			while ((temp == "" || temp == " ") && ffin)
 			{
 				getline(ffin, temp);
 			}
@@ -430,7 +417,7 @@ playing_start:
 			if (temp[0] == '.')
 			{
 				getline(ffin, tempint);
-				while (tempint == "" || tempint == " ")
+				while ((tempint == "" || tempint == " ") && ffin)
 				{
 					getline(ffin, tempint);
 				}
@@ -454,7 +441,7 @@ playing_start:
 			else if (temp == "default")
 			{
 				getline(ffin, tempint);
-				while (tempint == "" || tempint == " ")
+				while ((tempint == "" || tempint == " ") && ffin)
 				{
 					getline(ffin, tempint);
 				}
@@ -464,7 +451,7 @@ playing_start:
 			else
 			{
 				getline(ffin, tempint);
-				while (tempint == "" || tempint == " ")
+				while ((tempint == "" || tempint == " ") && ffin)
 				{
 					getline(ffin, tempint);
 				}
@@ -479,7 +466,7 @@ playing_start:
 							break;
 						}
 					}
-					if (!mismatch)
+					if (!mismatch && tempint != "")
 					{
 						volume[i] = stoi(tempint);
 					}
