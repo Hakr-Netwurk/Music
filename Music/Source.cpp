@@ -2,10 +2,12 @@
 #pragma comment(lib, "Winmm.lib")
 #include <algorithm>
 #include <ctime>
+#include <codecvt>
 #include <direct.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <random>
 #include <set>
 #include <string>
@@ -42,6 +44,12 @@ int morerand(int n) // different pseudorandom number generator for shuffling
 		cur = abs(4.5864 * cur * (1 - cur));
 	}
 	return cur * 1000000;
+}
+
+std::string wtomb(std::wstring wstr)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	return converter.to_bytes(wstr);
 }
 
 void shuffle(std::vector<int>& curlist, int n) // shuffle songs
@@ -102,11 +110,8 @@ void discordthing() // discord status
 	std::wstring lastplaying;
 	while (true)
 	{
-		std::string tempstr = "Playing ";
-		for (int i = 0; i < nowplaying.length(); i++)
-		{
-			tempstr.push_back(nowplaying[i]);
-		}
+		std::string tempstr;
+		tempstr = wtomb(L"Playing " + nowplaying);
 		lastplaying = nowplaying;
 		activity.SetDetails(tempstr.c_str());
 		timestamp.SetStart(time(NULL));
@@ -251,9 +256,8 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 			break;
 		}
 	}
-	std::string narrowstr(str.begin(), str.end());
-	std::string tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + narrowstr + ".mp3";
-	narrowstr = std::string(fullpathstr.begin(), fullpathstr.end());
+	std::string tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + wtomb(str) + ".mp3";
+	std::string narrowstr = wtomb(fullpathstr);
 	std::ifstream fin;
 	fin.open(tempstr);
 	if (!fin.good()) // if file doesn't exist
@@ -585,10 +589,7 @@ playing_start:
 					break;
 				}
 			}
-			for (int k = 0; k < str.length(); k++) // narrowstr is non-wide str (duh)
-			{
-				narrowstr.push_back(str[k]);
-			}
+			narrowstr = wtomb(str);
 			tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + narrowstr + ".mp3"; // append .mp3 to file name
 			str = std::wstring(exepath.begin(), exepath.end()) + L'\\' + std::to_wstring(foldernum) + L'\\' + str + L".mp3";
 			SetWindowTextW(GetConsoleWindow(), name.c_str()); // set window title to name
