@@ -207,35 +207,7 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 		int format = -1;
 		for (int j = 0; j < supportedformats.size(); j++) // check if any of the supported formats matches
 		{
-			bool mismatch = false;;
-			for (int k = 0; k < supportedformats[j].size(); k++)
-			{
-				if (str[str.length() - 1 - k] != supportedformats[j][supportedformats[j].size() - 1 - k])
-				{
-					if (str[str.length() - 1 - k] > 64 && str[str.length() - 1 - k] < 91)
-					{
-						if (str[str.length() - 1 - k] + 32 != supportedformats[j][supportedformats[j].size() - 1 - k])
-						{
-							mismatch = true;
-							break;
-						}
-					}
-					else
-					{
-						mismatch = true;
-						break;
-					}
-				}
-			}
-			if (str[str.length() - 1 - supportedformats[j].size()] != '.')
-			{
-				mismatch = true;
-			}
-			if (mismatch) // if not current format
-			{
-				continue;
-			}
-			else // if current format
+			if (str.rfind(std::wstring(supportedformats[j].begin(), supportedformats[j].end())) == str.size() - supportedformats.size()) // if current format
 			{
 				format = j;
 				break;
@@ -258,7 +230,7 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 	}
 	std::string tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + wtomb(str) + ".mp3";
 	std::string narrowstr = wtomb(fullpathstr);
-	std::ifstream fin;
+	std::wifstream fin;
 	fin.open(tempstr);
 	if (!fin.good()) // if file doesn't exist
 	{
