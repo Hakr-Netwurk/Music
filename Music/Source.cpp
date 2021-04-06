@@ -52,6 +52,12 @@ std::string wtomb(std::wstring wstr)
 	return converter.to_bytes(wstr);
 }
 
+std::wstring mbtow(std::string str)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	return converter.from_bytes(str);
+}
+
 void shuffle(std::vector<int>& curlist, int n) // shuffle songs
 {
 	int last, last2, last3, temp;
@@ -207,7 +213,7 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 		int format = -1;
 		for (int j = 0; j < supportedformats.size(); j++) // check if any of the supported formats matches
 		{
-			if (str.rfind(std::wstring(supportedformats[j].begin(), supportedformats[j].end())) == str.size() - supportedformats.size()) // if current format
+			if (str.rfind(std::wstring(supportedformats[j].begin(), supportedformats[j].end())) == str.size() - supportedformats[j].size()) // if current format
 			{
 				format = j;
 				break;
@@ -231,7 +237,7 @@ void convert(std::wstring str) // convert stuff (for multithreaded purposes)
 	std::string tempstr = exepath + '\\' + std::to_string(foldernum) + '\\' + wtomb(str) + ".mp3";
 	std::string narrowstr = wtomb(fullpathstr);
 	std::wifstream fin;
-	fin.open(tempstr);
+	fin.open(mbtow(exepath) + L'\\' + std::to_wstring(foldernum) + L'\\' + str + L".mp3");
 	if (!fin.good()) // if file doesn't exist
 	{
 		try
