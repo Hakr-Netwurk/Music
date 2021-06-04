@@ -4,6 +4,11 @@
 #include <Windows.h>
 
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+bool isvolume = false;
+extern int next = -1, foldernum = -1;
+extern std::vector<int> volumes = {};
+extern std::wstring name = L"", path = L"";
+extern std::string exepath = "";
 
 int colortonum(std::string str) // translate color string to a number
 {
@@ -57,6 +62,12 @@ std::string formattime(int timestamp) // formats the time to a readable dd:hh:mm
 	return finalstr;
 }
 
+std::string wtomb(std::wstring wstr)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	return converter.to_bytes(wstr);
+}
+
 std::pair<int, int> getcurrentlocation(std::string str) // get location of string (eg "pauseplay")
 {
 	if (str == "menu")
@@ -90,20 +101,21 @@ std::pair<int, int> getcurrentlocation(std::string str) // get location of strin
 }
 
 /*PROTOTYPE LAYOUT
-/
+
 ≡
 
 C418 - Alpha
-[--------------------] 00:01/10:50
+[-                   ] 01:00/10:50
 _    <<   |>   >>    ↔
-*
+Volume <---------------o---->
+
 */
 
 std::string updatedisplay(std::string action, std::pair<int, int> location, std::wstring name, int numbars, bool autosaveon, bool paused, int elapsed, int total) // updates console text (duh)
 {
 	CONSOLE_SCREEN_BUFFER_INFO screen;
 	GetConsoleScreenBufferInfo(console, &screen);
-	std::string selected, narrowname = std::string(name.begin(), name.end());
+	std::string selected, narrowname = std::string(name.begin(), name.end()), temp;
 	std::vector<std::vector<std::string>> v = // lookup table for different things
 	{
 		{ "null", "null", "null" },
@@ -117,31 +129,90 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	{
 		selected = v[location.first - 1][location.second];
 	}
-	if (action == "down")
+	else if (action == "down")
 	{
 		selected = v[location.first + 1][location.second];
 	}
-	if (action == "left")
+	else if (action == "left")
 	{
 		selected = v[location.first][location.second - 1];
 	}
-	if (action == "right")
+	else if (action == "right")
 	{
 		selected = v[location.first][location.second + 1];
 	}
-	// if user presses enter
-	if (action == "enter")
+	else if (action == "volume")
 	{
-		selected = v[location.first][location.second];
-		if (selected == "pauseplay")
-		{
-			paused = !paused;
-		}
+		selected = "pauseplay";
+		isvolume = true;
+	}
+
+	if (action == "back") // reset ui
+	{
+		selected = "pauseplay";
+		isvolume = false;
 	}
 	// for out of bounds, or updatedisplay without user input
 	if (action == "null" || selected == "null")
 	{
 		selected = v[location.first][location.second];
+	}
+	if (isvolume && (selected == "prev" || selected == "next"))
+	{
+		SetCurrentDirectoryA((exepath + '\\' + std::to_string(foldernum)).c_str());
+		int last = -1;
+		std::vector<std::string> v;
+		std::ifstream fin("volume", std::ios::app);
+		while (fin)
+		{
+			getline(fin, temp);
+			v.push_back(temp);
+		}
+		fin.close();
+		for (int i = 0; i < v.size(); i++)
+		{
+			if (v[i] == wtomb(name))
+			{
+				last = i;
+			}
+		}
+		for (int i = v.size() - 1; i >= 1; i--)
+		{
+			if (v[i - 1] != "")
+			{
+				break;
+			}
+			v.erase(v.end() - 1);
+		}
+		if (selected == "prev") // decrease volume (prev is left of pauseplay/volume)
+		{
+			volumes[next] = max(0, min(100, 5 * (round(volumes[next] / 5.0)) - 5));
+			selected = "pauseplay";
+			mciSendStringA(("setaudio CURR_SND volume to " + std::to_string(volumes[next] * 10)).c_str(), NULL, 0, 0); // set volume
+		}
+		else if (selected == "next") // increase volume
+		{
+			volumes[next] = max(0, min(100, 5 * (round(volumes[next] / 5.0)) + 5));
+			selected = "pauseplay";
+			mciSendStringA(("setaudio CURR_SND volume to " + std::to_string(volumes[next] * 10)).c_str(), NULL, 0, 0); // set volume
+		}
+		if (last == -1)
+		{
+			std::ofstream fout("volume", std::ostream::app);
+			fout << std::endl << wtomb(name) << std::endl << volumes[next] << std::endl;
+			fout.close();
+		}
+		else
+		{
+			v[last + 1] = std::to_string(volumes[next]);
+			std::ofstream fout("volume");
+			for (int i = 0; i < v.size(); i++)
+			{
+				fout << v[i] << std::endl;
+			}
+			fout.close();
+		}
+		SetCurrentDirectoryW(path.c_str());
 	}
 	SetConsoleCursorPosition(console, { 0, 0 });
 	color("light gray", "black");
@@ -169,46 +240,70 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	std::cout << ' ' << formattime(elapsed) << '/' << formattime(total);
 	color("light gray", "black");
 	std::cout << std::endl;
-	if (selected == "help")
+	if (!isvolume)
 	{
-		color("black", "light gray");
-	}
-	std::cout << "?";
-	color("light gray", "black");
-	std::cout << "    ";
-	if (selected == "prev")
-	{
-		color("black", "light gray");
-	}
-	std::cout << "<<";
-	color("light gray", "black");
-	std::cout << "   ";
-	if (selected == "pauseplay")
-	{
-		color("black", "light gray");
-	}
-	if (paused)
-	{
-		std::cout << "|>";
+		if (selected == "help")
+		{
+			color("black", "light gray");
+		}
+		std::cout << "?";
+		color("light gray", "black");
+		std::cout << "    ";
+		if (selected == "prev")
+		{
+			color("black", "light gray");
+		}
+		std::cout << "<<";
+		color("light gray", "black");
+		std::cout << "   ";
+		if (selected == "pauseplay")
+		{
+			color("black", "light gray");
+		}
+		if (paused)
+		{
+			std::cout << "|>";
+		}
+		else
+		{
+			std::cout << "||";
+		}
+		color("light gray", "black");
+		std::cout << "   ";
+		if (selected == "next")
+		{
+			color("black", "light gray");
+		}
+		std::cout << ">>";
+		color("light gray", "black");
+		std::cout << "    ";
+		if (selected == "volume")
+		{
+			color("black", "light gray");
+		}
+		std::cout << char(29);
 	}
 	else
 	{
-		std::cout << "||";
+		std::cout << "Volume ";
+		if (selected == "pauseplay")
+		{
+			color("black", "light gray");
+		}
+		std::cout << '<';
+		for (int i = 1; i < volumes[next] / 5; i++)
+		{
+			std::cout << '-';
+		}
+		std::cout << 'o';
+		for (int i = volumes[next] / 5; i < 20; i++)
+		{
+			std::cout << '-';
+		}
+		std::cout << '>';
 	}
 	color("light gray", "black");
-	std::cout << "   ";
-	if (selected == "next")
-	{
-		color("black", "light gray");
-	}
-	std::cout << ">>";
-	color("light gray", "black");
-	std::cout << "    ";
-	if (selected == "volume")
-	{
-		color("black", "light gray");
-	}
-	std::cout << char(29);
+	std::cout << "       ";
 	CONSOLE_CURSOR_INFO cursorinfo;
 	GetConsoleCursorInfo(console, &cursorinfo);
 	cursorinfo.bVisible = false; // make cursor invisible so it doesnt flash

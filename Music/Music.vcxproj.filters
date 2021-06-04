@@ -28,6 +28,9 @@
     <None Include="swscale-5.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="discord\achievement_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,11 +73,14 @@
     <ClCompile Include="discord\voice_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="discord\achievement_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -132,6 +138,9 @@
     <ClInclude Include="ffmpeg\Codecs\Codec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg\Codecs\ffmpeg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ffmpeg\Codecs\H264NVEncCodec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -153,6 +162,9 @@
     <ClInclude Include="ffmpeg\Demuxing\AudioInputStream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg\Demuxing\ffmpeg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ffmpeg\Demuxing\InputStream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -169,6 +181,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\Frame Sinks\AudioFrameSink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\Frame Sinks\ffmpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\Frame Sinks\Filter.h">
@@ -201,10 +216,16 @@
     <ClInclude Include="ffmpeg\Info\ContainerInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg\Info\ffmpeg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ffmpeg\Info\VideoStreamInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\Muxing\AudioOutputStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\Muxing\ffmpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\Muxing\Muxer.h">
@@ -220,6 +241,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\Sources\EncodedFileSource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg\Sources\ffmpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\Sources\InputSource.h">
@@ -265,30 +289,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ffmpeg\VideoFormatConverter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ffmpeg\Sources\ffmpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ffmpeg\Muxing\ffmpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ffmpeg\Info\ffmpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ffmpeg\Frame Sinks\ffmpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ffmpeg\Demuxing\ffmpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ffmpeg\Codecs\ffmpeg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -25,15 +25,16 @@ struct DiscordState
 	std::unique_ptr<discord::Core> core;
 };
 
-std::wstring name, nowplaying, path;
-std::string exepath;
-int next = -1, timesincestart, foldernum = -1;
+std::wstring nowplaying;
+int timesincestart;
 bool paused = false, discordpaused, doneplaying, discordstarted = false, idle = false;
 std::vector<std::string> supportedformats = { "mp3", "m4a", "wma", "flac", "ogg" }; // must be lowercase
+std::vector<std::wstring> v;
 DiscordState state{};
 discord::Core* core{};
 discord::Activity activity{};
 discord::ActivityTimestamps timestamp{};
+discord::ActivityAssets assets{};
 
 int morerand(int n) // different pseudorandom number generator for shuffling
 {
@@ -44,12 +45,6 @@ int morerand(int n) // different pseudorandom number generator for shuffling
 		cur = abs(4.5864 * cur * (1 - cur));
 	}
 	return cur * 1000000;
-}
-
-std::string wtomb(std::wstring wstr)
-{
-	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-	return converter.to_bytes(wstr);
 }
 
 std::wstring mbtow(std::string str)
@@ -122,6 +117,36 @@ void discordthing() // discord status
 		activity.SetDetails(tempstr.c_str());
 		timestamp.SetStart(time(NULL));
 		activity.GetTimestamps() = timestamp;
+		// no album art icon :(
+		/*if (next >= 0)
+		{
+			AVFormatContext* pFormatCtx = avformat_alloc_context();
+			avformat_open_input(&pFormatCtx, wtomb(v[next]).c_str(), NULL, NULL);
+			if (std::filesystem::exists(exepath + "\\temp.png"))
+			{
+				std::filesystem::remove(exepath + "\\temp.png");
+			}
+			for (int i = 0; i < pFormatCtx->nb_streams; i++)
+			{
+				if (pFormatCtx->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+				{
+					AVPacket pkt = pFormatCtx->streams[i]->attached_pic;
+					FILE* album_art = fopen((exepath + "\\temp.png").c_str(), "wb");
+					fwrite(pkt.data, pkt.size, 1, album_art);
+					fclose(album_art);
+					break;
+				}
+			}
+			if (std::filesystem::exists(exepath + "\\temp.png"))
+			{
+				assets.SetLargeImage((exepath + "\\temp.png").c_str());
+			}
+			else
+			{
+				assets.SetLargeImage(NULL);
+			}
+			activity.GetAssets() = assets;
+		}*/
 		state.core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {});
 		while (true)
 		{
@@ -283,8 +308,7 @@ int main(int argc, char* argv[])
 	const char* c;
 	std::string temp, location;
 	std::wstring str, temppath;
-	std::vector<int> curlist, list, volume;
-	std::vector<std::wstring> v;
+	std::vector<int> curlist, list;
 	std::vector<std::thread> tv;
 	std::wifstream fin;
 	std::wofstream fout;
@@ -374,7 +398,7 @@ playing_start:
 	SetCurrentDirectoryA((exepath + '\\' + std::to_string(foldernum)).c_str());
 	std::ifstream ffin;
 	ffin.open("volume");
-	volume.resize(v.size(), 100);
+	volumes.resize(v.size(), 100);
 	if (!ffin.good())
 	{
 		ffin.close();
@@ -392,7 +416,7 @@ playing_start:
 			{
 				getline(ffin, temp);
 			}
-			if (temp[0] == '#')
+			if (temp[0] == '#' || temp == "")
 			{
 				continue;
 			}
@@ -405,18 +429,9 @@ playing_start:
 				}
 				for (int i = 0; i < v.size(); i++)
 				{
-					bool mismatch = false;
-					for (int j = 0; j < temp.length(); j++)
+					if (v[i].find(mbtow(temp)) != std::string::npos)
 					{
-						if (v[i][v[i].size() - temp.length() + j] != temp[j])
-						{
-							mismatch = true;
-							break;
-						}
-					}
-					if (!mismatch)
-					{
-						volume[i] = stoi(tempint);
+						volumes[i] = stoi(tempint);
 					}
 				}
 			}
@@ -427,8 +442,8 @@ playing_start:
 				{
 					getline(ffin, tempint);
 				}
-				volume.clear();
-				volume.resize(v.size(), stoi(tempint));
+				volumes.clear();
+				volumes.resize(v.size(), stoi(tempint));
 			}
 			else
 			{
@@ -439,18 +454,9 @@ playing_start:
 				}
 				for (int i = 0; i < v.size(); i++)
 				{
-					bool mismatch = false;
-					for (int j = 0; j < temp.length(); j++)
+					if (v[i].find(mbtow(temp)) != std::string::npos)
 					{
-						if (v[i][j] != temp[j])
-						{
-							mismatch = true;
-							break;
-						}
-					}
-					if (!mismatch && tempint != "")
-					{
-						volume[i] = stoi(tempint);
+						volumes[i] = stoi(tempint);
 					}
 				}
 			}
@@ -519,35 +525,7 @@ playing_start:
 				int format = -1;
 				for (int j = 0; j < supportedformats.size(); j++) // check if any of the supported formats matches
 				{
-					bool mismatch = false;;
-					for (int k = 0; k < supportedformats[j].size(); k++)
-					{
-						if (str[str.length() - 1 - k] != supportedformats[j][supportedformats[j].size() - 1 - k])
-						{
-							if (str[str.length() - 1 - k] > 64 && str[str.length() - 1 - k] < 91)
-							{
-								if (str[str.length() - 1 - k] + 32 != supportedformats[j][supportedformats[j].size() - 1 - k])
-								{
-									mismatch = true;
-									break;
-								}
-							}
-							else
-							{
-								mismatch = true;
-								break;
-							}
-						}
-					}
-					if (str[str.length() - 1 - supportedformats[j].size()] != '.')
-					{
-						mismatch = true;
-					}
-					if (mismatch) // if not current format
-					{
-						continue;
-					}
-					else // if current format
+					if (str.rfind(std::wstring(supportedformats[j].begin(), supportedformats[j].end())) == str.size() - supportedformats[j].size()) // if current format
 					{
 						format = j;
 						break;
@@ -613,10 +591,11 @@ playing_start:
 			location = updatedisplay("null", getcurrentlocation("pauseplay"), name, 0, true, false, 0, info.durationInSeconds); // update the console ui
 			nowplaying = name;
 			mciSendStringA("play CURR_SND", NULL, 0, 0); // play the song
-			mciSendStringA(("setaudio CURR_SND volume to " + std::to_string(volume[next] * 10)).c_str(), NULL, 0, 0); // set volume
+			mciSendStringA(("setaudio CURR_SND volume to " + std::to_string(volumes[next] * 10)).c_str(), NULL, 0, 0); // set volume
 			thyme = clock();
 			lastbar = 0;
 			lastsec = 0;
+			clock_t current;
 			while (true)
 			{
 				Sleep(10);
@@ -624,78 +603,52 @@ playing_start:
 				GetAsyncKeyState(177);
 				GetAsyncKeyState(179);
 				GetAsyncKeyState(32);
-				clock_t current = clock();
-				if (((current - start) / 1000.0) / info.durationInSeconds * 20 > lastbar) // update bar count
+				GetAsyncKeyState(VK_LEFT);
+				GetAsyncKeyState(VK_RIGHT);
+				GetAsyncKeyState(VK_UP);
+				GetAsyncKeyState(VK_DOWN);
+				GetAsyncKeyState(10);
+				if (!paused)
 				{
-					lastbar = ((current - start) / 1000) / info.durationInSeconds * 20;
-					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
-				}
-				if (current - start >= info.durationInSeconds * 1000) // if song is over
-				{
-					break;
-				}
-				if ((current - start) / 1000 > lastsec) // update second count
-				{
-					lastsec = (current - start) / 1000;
-					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					current = clock();
+					if (((current - start) / 1000.0) / info.durationInSeconds * 20 > lastbar) // update bar count
+					{
+						lastbar = ((current - start) / 1000) / info.durationInSeconds * 20;
+						location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					}
+					if (current - start >= info.durationInSeconds * 1000) // if song is over
+					{
+						break;
+					}
+					if ((current - start) / 1000 > lastsec) // update second count
+					{
+						lastsec = (current - start) / 1000;
+						location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					}
 				}
 				if (GetAsyncKeyState(179) || (GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())) // if paused
 				{
-					mciSendString("pause CURR_SND", NULL, 0, 0); // pause
-					clock_t current = clock(); // get paused time
-					SetConsoleTitleW(L"PAUSED"); // set window name to PAUSED
-					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, true, lastsec, info.durationInSeconds); // update console ui to paused
-					paused = true;
-					timesincestart = current - start;
-					while (GetAsyncKeyState(179) || GetAsyncKeyState(32)) // while the key is held
+					while (GetAsyncKeyState(179) || (GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())) // while the key is held
 					{
 						Sleep(1);
 					}
-					while (!GetAsyncKeyState(179) && !(GetAsyncKeyState(32) && GetForegroundWindow() == GetConsoleWindow())) // until user unpauses
+					if (!paused)
 					{
-						Sleep(1);
-						if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) // check for left arrow key
-						{
-							while (GetAsyncKeyState(VK_LEFT))
-							{
-								Sleep(1);
-							}
-							location = updatedisplay("left", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // move "cursor" left
-						}
-						if (GetAsyncKeyState(VK_RIGHT) && GetForegroundWindow() == GetConsoleWindow())
-						{
-							while (GetAsyncKeyState(VK_RIGHT))
-							{
-								Sleep(1);
-							}
-							location = updatedisplay("right", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
-						}
-						if (GetAsyncKeyState(VK_UP) && GetForegroundWindow() == GetConsoleWindow())
-						{
-							while (GetAsyncKeyState(VK_UP))
-							{
-								Sleep(1);
-							}
-							location = updatedisplay("up", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
-						}
-						if (GetAsyncKeyState(VK_DOWN) && GetForegroundWindow() == GetConsoleWindow())
-						{
-							while (GetAsyncKeyState(VK_DOWN))
-							{
-								Sleep(1);
-							}
-							location = updatedisplay("down", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
-						}
+						mciSendString("pause CURR_SND", NULL, 0, 0); // pause
+						clock_t current = clock(); // get paused time
+						SetConsoleTitleW(L"PAUSED"); // set window name to PAUSED
+						location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, true, lastsec, info.durationInSeconds); // update console ui to paused
+						paused = true;
+						timesincestart = current - start;
 					}
-					while (GetAsyncKeyState(179) || GetAsyncKeyState(32)) // while key is held
+					else
 					{
-						Sleep(1);
+						start = clock() - current + start; // set the start time to account for paused time
+						mciSendStringW(L"play CURR_SND", NULL, 0, 0); // resume the song
+						SetConsoleTitleW(name.c_str()); // set window name
+						location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // update to unpause in console ui
+						paused = false;
 					}
-					start = clock() - current + start; // set the start time to account for paused time
-					mciSendStringW(L"play CURR_SND", NULL, 0, 0); // resume the song
-					SetConsoleTitleW(name.c_str()); // set window name
-					location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // update to unpause in console ui
-					paused = false;
 				}
 				if (GetAsyncKeyState(177)) // previous song
 				{
@@ -705,6 +658,7 @@ playing_start:
 						Sleep(1);
 					}
 					next = -2;
+					paused = false;
 					break;
 				}
 				if (GetAsyncKeyState(176)) // next song
@@ -714,6 +668,7 @@ playing_start:
 					{
 						Sleep(1);
 					}
+					paused = false;
 					break;
 				}
 				if (GetAsyncKeyState(VK_LEFT) && GetForegroundWindow() == GetConsoleWindow()) // if left arrow key is pressed
@@ -722,7 +677,7 @@ playing_start:
 					{
 						Sleep(1);
 					}
-					location = updatedisplay("left", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // move "cursor" left
+					location = updatedisplay("left", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds); // move "cursor" left
 				}
 				if (GetAsyncKeyState(VK_RIGHT) && GetForegroundWindow() == GetConsoleWindow())
 				{
@@ -730,7 +685,7 @@ playing_start:
 					{
 						Sleep(1);
 					}
-					location = updatedisplay("right", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					location = updatedisplay("right", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
 				}
 				if (GetAsyncKeyState(VK_UP) && GetForegroundWindow() == GetConsoleWindow())
 				{
@@ -738,7 +693,7 @@ playing_start:
 					{
 						Sleep(1);
 					}
-					location = updatedisplay("up", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					location = updatedisplay("up", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
 				}
 				if (GetAsyncKeyState(VK_DOWN) && GetForegroundWindow() == GetConsoleWindow())
 				{
@@ -746,7 +701,86 @@ playing_start:
 					{
 						Sleep(1);
 					}
-					location = updatedisplay("down", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds);
+					location = updatedisplay("down", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
+				}
+				if ((GetAsyncKeyState(10) || GetAsyncKeyState(13)) && GetForegroundWindow() == GetConsoleWindow())
+				{
+					if (location == "prev")
+					{
+						mciSendString("close CURR_SND", NULL, 0, 0);
+						while ((GetAsyncKeyState(10) || GetAsyncKeyState(13)) && GetForegroundWindow() == GetConsoleWindow())
+						{
+							Sleep(1);
+						}
+						next = -2;
+						paused = false;
+						break;
+					}
+					else if (location == "next")
+					{
+						mciSendString("close CURR_SND", NULL, 0, 0);
+						while ((GetAsyncKeyState(10) || GetAsyncKeyState(13)) && GetForegroundWindow() == GetConsoleWindow())
+						{
+							Sleep(1);
+						}
+						paused = false;
+						break;
+					}
+					else if (location == "pauseplay")
+					{
+						if (!paused)
+						{
+							mciSendString("pause CURR_SND", NULL, 0, 0); // pause
+							clock_t current = clock(); // get paused time
+							SetConsoleTitleW(L"PAUSED"); // set window name to PAUSED
+							location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, true, lastsec, info.durationInSeconds); // update console ui to paused
+							paused = true;
+							timesincestart = current - start;
+						}
+						else
+						{
+							start = clock() - current + start; // set the start time to account for paused time
+							mciSendStringW(L"play CURR_SND", NULL, 0, 0); // resume the song
+							SetConsoleTitleW(name.c_str()); // set window name
+							location = updatedisplay("null", getcurrentlocation(location), name, lastbar, true, false, lastsec, info.durationInSeconds); // update to unpause in console ui
+							paused = false;
+						}
+					}
+					else if (location == "volume")
+					{
+						location = updatedisplay("volume", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds); // show volume
+					}
+					else if (location == "help")
+					{
+						// TODO @vbbab: add help screen or something
+						// updatedisplay("help", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
+						// in ui.h add: if (action == "help") {ishelp = true;} 
+						// ^ and display help information as well
+						// also add global variable ishelp (in ui.h)
+						// in the if (action == "back"), add ishelp = false;
+						// do some testing, add spaces to end of cout if necessary
+						// you can check out how i did volume
+					}
+					else if (location == "menu")
+					{
+
+					}
+					else if (location == "progbar")
+					{
+
+					}
+					while ((GetAsyncKeyState(10) || GetAsyncKeyState(13)) && GetForegroundWindow() == GetConsoleWindow())
+					{
+						Sleep(1);
+					}
+				}
+				if (GetAsyncKeyState(27))
+				{
+					location = updatedisplay("back", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
+					while (GetAsyncKeyState(27))
+					{
+						Sleep(1);
+					}
 				}
 			}
 			mciSendString("close CURR_SND", NULL, 0, 0);
