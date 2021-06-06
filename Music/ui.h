@@ -6,7 +6,6 @@
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 bool isvolume = false;
 bool ishelp = false; // If I am ON the help screen (or need to be ON it)
-bool helpPainted = false; // Additional bool to prevent infinite repaint of help screen (flashing, ugh)
 extern int next = -1, foldernum = -1;
 extern std::vector<int> volumes = {};
 extern std::wstring name = L"", path = L"";
@@ -157,7 +156,6 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		if (ishelp) {
 			system("CLS");
 			ishelp = false;
-			helpPainted = false;
 		}
 	}
 	// for out of bounds, or updatedisplay without user input
