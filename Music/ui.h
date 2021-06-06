@@ -226,7 +226,8 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	if (action == "help") {
 		system("CLS");
 		// Get ready for... ShItTy cOdE!
-		std::cout << "----------------------------------------------------" << std::endl
+		std::cout
+			<< "----------------------------------------------------" << std::endl
 			<< "|                   Music: Help                    |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| I. Introduction                                  |" << std::endl
@@ -236,12 +237,26 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			<< "| TUI, used as the main control interface.         |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| II. The Interface                                |" << std::endl
-			<< "|                                                  |" << std::endl
-			<< "| " << char(240) << " (1)                                            |" << std::endl
-			<< "|                                                  |" << std::endl
-			<< "| Title of Song File                               |" << std::endl
-			<< "| [                    ] 00:00/04:00 (2)           |" << std::endl
-			<< "| ? (3)    << (4)   |> (5)   >> (6)     " << char(29) << " (7)      |" << std::endl
+			<< "|                                                  |" << std::endl;
+		std::cout << "| ";
+		color("cyan", "black");
+		std::cout << char(240) << " (1)                                            ";
+		color("light gray", "black");
+		std::cout << "|" << std::endl << "|                                                  |" << std::endl;
+		std::cout << "| ";
+		color("cyan", "black");
+		std::cout << "Title of Song File                               ";
+		color("light gray", "black");
+		std::cout << "|" << std::endl << "| ";
+		color("cyan", "black");
+		std::cout << "[                    ] 00:00/04:00 (2)           ";
+		color("light gray", "black");
+		std::cout << "|" << std::endl << "| ";
+		color("cyan", "black");
+		std::cout << "? (3)    << (4)   |> (5)   >> (6)     " << char(29) << " (7)      ";
+		color("light gray", "black");
+		std::cout
+			<< "|" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| (1): Menu icon (does nothing atm)                |" << std::endl
 			<< "| (2): Progress bar. It will fill up with dashes   |" << std::endl
@@ -282,6 +297,13 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			<< "                                                    " << std::endl
 			<< "                [ E S C ] Go back                   " << std::endl;
 		ishelp = true;
+		CONSOLE_SCREEN_BUFFER_INFO sbinfo;
+		SMALL_RECT smallrect;
+		GetConsoleScreenBufferInfo(console, &sbinfo);
+		smallrect = sbinfo.srWindow;
+		smallrect.Bottom -= smallrect.Top;
+		smallrect.Top = 0;
+		SetConsoleWindowInfo(console, TRUE, &smallrect);
 		return "pauseplay";
 	}
 
