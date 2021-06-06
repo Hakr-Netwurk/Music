@@ -1,4 +1,11 @@
-#pragma comment(lib, "ffmpeg-cpp.lib")
+#pragma comment(lib, "avcodec.lib")
+#pragma comment(lib, "avdevice.lib")
+#pragma comment(lib, "avfilter.lib")
+#pragma comment(lib, "avformat.lib")
+#pragma comment(lib, "avutil.lib")
+#pragma comment(lib, "postproc.lib")
+#pragma comment(lib, "swresample.lib")
+#pragma comment(lib, "swscale.lib")
 #pragma comment(lib, "Winmm.lib")
 #include <algorithm>
 #include <ctime>
@@ -17,7 +24,7 @@
 #include <mmsystem.h>
 #include <TlHelp32.h>
 #include "discord/discord.h"
-#include "ffmpeg/ffmpegcpp.h"
+#include "ffmpegcpp.h"
 #include "ui.h"
 
 struct DiscordState
