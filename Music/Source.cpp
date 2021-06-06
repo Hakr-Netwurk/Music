@@ -760,14 +760,6 @@ playing_start:
 					}
 					else if (location == "help")
 					{
-						// TODO @vbbab: add help screen or something
-						// updatedisplay("help", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
-						// in ui.h add: if (action == "help") {ishelp = true;} 
-						// ^ and display help information as well
-						// also add global variable ishelp (in ui.h)
-						// in the if (action == "back"), add ishelp = false;
-						// do some testing, add spaces to end of cout if necessary
-						// you can check out how i did volume
 						updatedisplay("help", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
 					}
 					else if (location == "menu")
@@ -783,10 +775,10 @@ playing_start:
 						Sleep(1);
 					}
 				}
-				if (GetAsyncKeyState(27))
+				if (GetAsyncKeyState(27) && GetForegroundWindow() == GetConsoleWindow())
 				{
 					location = updatedisplay("back", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
-					while (GetAsyncKeyState(27))
+					while (GetAsyncKeyState(27) && GetForegroundWindow() == GetConsoleWindow())
 					{
 						Sleep(1);
 					}
