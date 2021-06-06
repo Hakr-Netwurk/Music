@@ -7,3 +7,4 @@ Music/x64
 Music/test.cpp
 bin/*
 !bin/Music.exe
+*.pdb

@@ -166,9 +166,7 @@
     <None Include="avformat-58.dll" />
     <None Include="avutil-56.dll" />
     <None Include="discord_game_sdk.dll" />
-    <None Include="md-styles.css" />
     <None Include="postproc-55.dll" />
-    <None Include="README.md" />
     <None Include="swresample-3.dll" />
     <None Include="swscale-5.dll" />
   </ItemGroup>

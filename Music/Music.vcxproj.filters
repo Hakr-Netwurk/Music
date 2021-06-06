@@ -15,8 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="md-styles.css" />
-    <None Include="README.md" />
     <None Include="discord_game_sdk.dll" />
     <None Include="avcodec-58.dll" />
     <None Include="avdevice-58.dll" />

@@ -230,15 +230,19 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	if (action == "help") {
 		system("CLS");
 		// Get ready for... ShItTy cOdE!
+		// IMPORTANT:
+		// - try to keep << "" << std::endl format (so it is easier to see)
+		// - align left, with at least 1 space before right margin
+		// - do not split words to save space, skip a line if word does not fit
 		std::cout
 			<< "----------------------------------------------------" << std::endl
 			<< "|                   Music: Help                    |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| I. Introduction                                  |" << std::endl
 			<< "|                                                  |" << std::endl
-			<< "| Hakr-Netwurk/Music is a lightweight, fast CLI-ba-|" << std::endl
-			<< "| sed music player. It contains a relatively simple|" << std::endl
-			<< "| TUI, used as the main control interface.         |" << std::endl
+			<< "| Hakr-Netwurk/Music is a lightweight, fast CLI-   |" << std::endl
+			<< "| based music player. It contains a relatively     |" << std::endl
+			<< "| simple TUI, used as the main control interface.  |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| II. The Interface                                |" << std::endl
 			<< "|                                                  |" << std::endl;
