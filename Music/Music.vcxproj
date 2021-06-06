@@ -111,7 +111,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>..\include;ffmpeg-source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +147,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;ffmpeg</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +155,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
+    <ProjectReference />
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="avcodec-58.dll" />
@@ -184,6 +185,41 @@
     <ClCompile Include="discord\types.cpp" />
     <ClCompile Include="discord\user_manager.cpp" />
     <ClCompile Include="discord\voice_manager.cpp" />
+    <ClCompile Include="ffmpeg\AudioFormatConverter.cpp" />
+    <ClCompile Include="ffmpeg\CodecDeducer.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\AudioCodec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\Codec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\H264NVEncCodec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\H265NVEncCodec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\JPGCodec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\PNGCodec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\VideoCodec.cpp" />
+    <ClCompile Include="ffmpeg\Codecs\VP9Codec.cpp" />
+    <ClCompile Include="ffmpeg\Demuxing\AudioInputStream.cpp" />
+    <ClCompile Include="ffmpeg\Demuxing\InputStream.cpp" />
+    <ClCompile Include="ffmpeg\Demuxing\StreamData.cpp" />
+    <ClCompile Include="ffmpeg\Demuxing\VideoInputStream.cpp" />
+    <ClCompile Include="ffmpeg\FFmpegException.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\AudioEncoder.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\AudioFilter.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\Filter.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\FrameSinkStream.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\OneInputFrameSink.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\VideoEncoder.cpp" />
+    <ClCompile Include="ffmpeg\Frame Sinks\VideoFilterInput.cpp" />
+    <ClCompile Include="ffmpeg\FrameContainer.cpp" />
+    <ClCompile Include="ffmpeg\Muxing\AudioOutputStream.cpp" />
+    <ClCompile Include="ffmpeg\Muxing\Muxer.cpp" />
+    <ClCompile Include="ffmpeg\Muxing\OutputStream.cpp" />
+    <ClCompile Include="ffmpeg\Muxing\VideoOutputStream.cpp" />
+    <ClCompile Include="ffmpeg\OpenCodec.cpp" />
+    <ClCompile Include="ffmpeg\Sources\Demuxer.cpp" />
+    <ClCompile Include="ffmpeg\Sources\EncodedFileSource.cpp" />
+    <ClCompile Include="ffmpeg\Sources\RawAudioDataSource.cpp" />
+    <ClCompile Include="ffmpeg\Sources\RawAudioFileSource.cpp" />
+    <ClCompile Include="ffmpeg\Sources\RawVideoDataSource.cpp" />
+    <ClCompile Include="ffmpeg\Sources\RawVideoFileSource.cpp" />
+    <ClCompile Include="ffmpeg\VideoFormatConverter.cpp" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -261,8 +297,15 @@
     <ClInclude Include="ui.h" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="avcodec.lib" />
+    <Library Include="avdevice.lib" />
+    <Library Include="avfilter.lib" />
+    <Library Include="avformat.lib" />
+    <Library Include="avutil.lib" />
     <Library Include="discord_game_sdk.dll.lib" />
-    <Library Include="ffmpeg-cpp.lib" />
+    <Library Include="postproc.lib" />
+    <Library Include="swresample.lib" />
+    <Library Include="swscale.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
