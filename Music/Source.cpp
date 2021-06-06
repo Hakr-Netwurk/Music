@@ -1,3 +1,9 @@
+/**
+  * Hakr-Netwurk/Music
+  * Developed by: supsm
+  * Helper: Vbbab
+*/
+
 #pragma comment(lib, "avcodec.lib")
 #pragma comment(lib, "avdevice.lib")
 #pragma comment(lib, "avfilter.lib")

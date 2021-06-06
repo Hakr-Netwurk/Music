@@ -1,4 +1,8 @@
-﻿#include <iostream>
+﻿/**
+  * ui.h
+  * The header-only TUI framework for Hakr-Netwurk/Music.
+*/
+#include <iostream>
 #include <string>
 #include <vector>
 #include <Windows.h>
@@ -232,8 +236,8 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			<< "|                                                  |" << std::endl
 			<< "| I. Introduction                                  |" << std::endl
 			<< "|                                                  |" << std::endl
-			<< "| supsm/music is a lightweight, fast CLI-based     |" << std::endl
-			<< "| music player. It contains a relatively simple    |" << std::endl
+			<< "| Hakr-Netwurk/Music is a lightweight, fast CLI-ba-|" << std::endl
+			<< "| sed music player. It contains a relatively simple|" << std::endl
 			<< "| TUI, used as the main control interface.         |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| II. The Interface                                |" << std::endl
@@ -277,7 +281,7 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			<< "|                                                  |" << std::endl
 			<< "| III. General Usage                               |" << std::endl
 			<< "|                                                  |" << std::endl
-			<< "| Upon first boot, or when the \"path\" file is      |" << std::endl
+			<< "| Upon first boot, or when the \"paths\" file is     |" << std::endl
 			<< "| deleted, the program will prompt you for your    |" << std::endl
 			<< "| music location. Afterwards, refer to the above   |" << std::endl
 			<< "| section to naviagte the interface.               |" << std::endl
