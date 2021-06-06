@@ -100,10 +100,6 @@ std::pair<int, int> getcurrentlocation(std::string str) // get location of strin
 	{
 		return std::make_pair(3, 5);
 	}
-	// PATCH: NOP for help
-	if (str == "nop") {
-		return std::make_pair(-1, -1);
-	}
 }
 
 /*PROTOTYPE LAYOUT
@@ -130,10 +126,6 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		{ "null", "help", "prev", "pauseplay", "next", "volume", "null" },
 		{ "null", "null", "null", "null", "null", "null", "null" }
 	};
-	if (location == std::pair(-1, -1)) {
-		// Just return "nop" again. Hang here!
-		return "nop";
-	}
 	// position selected accordingly
 	if (action == "up")
 	{
@@ -156,9 +148,6 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		selected = "pauseplay";
 		isvolume = true;
 	}
-	else if (action == "help") {
-		ishelp = true;
-	}
 
 	if (action == "back") // reset ui
 	{
@@ -176,6 +165,7 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	{
 		selected = v[location.first][location.second];
 	}
+
 	if (isvolume && (selected == "prev" || selected == "next"))
 	{
 		SetCurrentDirectoryA((exepath + '\\' + std::to_string(foldernum)).c_str());
@@ -235,7 +225,7 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 	}
 
 	// Help dialog painting
-	if (ishelp && !helpPainted) {
+	if (action == "help") {
 		system("CLS");
 		// Get ready for... ShItTy cOdE!
 		std::cout << "----------------------------------------------------" << std::endl
@@ -243,46 +233,47 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			<< "|                                                  |" << std::endl
 			<< "| I. Introduction                                  |" << std::endl
 			<< "|                                                  |" << std::endl
-			<< "|  supsm/music is a lightweight, fast CLI-based mu-|" << std::endl
-			<< "| sic player. It contains a relatively simple TUI, |" << std::endl
-			<< "| used as the main control interface.              |" << std::endl
+			<< "| supsm/music is a lightweight, fast CLI-based     |" << std::endl
+			<< "| music player. It contains a relatively simple    |" << std::endl
+			<< "| TUI, used as the main control interface.         |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| II. The Interface                                |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| " << char(240) << " (1)                                            |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| Title of Song File                               |" << std::endl
-			<< "| [                    ] 00:00/04:00  (2)          |" << std::endl
-			<< "| ? (3)    << (4)   |> (5)   >> (6)    ↔ (7)       |" << std::endl
+			<< "| [                    ] 00:00/04:00 (2)           |" << std::endl
+			<< "| ? (3)    << (4)   |> (5)   >> (6)     " << char(29) << " (7)      |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| (1): Menu icon (does nothing atm)                |" << std::endl
-			<< "| (2): Progress bar. It will fill up with dashes as|" << std::endl
-			<< "| you progress through the song.                   |" << std::endl
-			<< "| (3): Help. Select it to bring up this dia-       |" << std::endl
-			<< "| log box. (Not to be confused with a cry for help)|" << std::endl
+			<< "| (2): Progress bar. It will fill up with dashes   |" << std::endl
+			<< "| as you progress through the song.                |" << std::endl
+			<< "| (3): Help. Select it to bring up this dialog box |" << std::endl
+			<< "| (Not to be confused with a cry for help)         |" << std::endl
 			<< "| (4): Previous. (Do I really need to explain??)   |" << std::endl
+			<< "| If you have a key for this on your keyboard,     |" << std::endl
+			<< "| that also works.                                 |" << std::endl
 			<< "| (5): Play/Pause. Go figure! [SPACE]              |" << std::endl
+			<< "| (Again, if you have a key, it also works)        |" << std::endl
 			<< "| (6): Huh... I wonder what it could be...?        |" << std::endl
-			<< "| (7): Additional options. Currently serves to adj-|" << std::endl
-			<< "| ust volume. With the volume slider selected, use |" << std::endl
-			<< "| the arrow keys. Press *ESC* when you're done,    |" << std::endl
-			<< "| it's a bug.                                      |" << std::endl
+			<< "| (7): Volume slider. With the volume slider       |" << std::endl
+			<< "| selected, use the arrow keys.                    |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| Select things using the arrow keys. Hit enter to |" << std::endl
-			<< "| \"activate\" them.                                 |" << std::endl // IDK why, there's a strange gap here that requires extra space
+			<< "| \"activate\" them.                                 |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| III. General Usage                               |" << std::endl
 			<< "|                                                  |" << std::endl
-			<< "| Upon first boot, or when the \"path\" file is del- |" << std::endl // Here too
-			<< "|  eted, the program will prompt you for your music|" << std::endl
-			<< "| location. Afterwards, refer to the above section |" << std::endl
-			<< "| to naviagte the interface.                       |" << std::endl
+			<< "| Upon first boot, or when the \"path\" file is      |" << std::endl
+			<< "| deleted, the program will prompt you for your    |" << std::endl
+			<< "| music location. Afterwards, refer to the above   |" << std::endl
+			<< "| section to naviagte the interface.               |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| IV. Misc                                         |" << std::endl
 			<< "|                                                  |" << std::endl
-			<< "| Music has Discord integration! (But this is curr-|" << std::endl
-			<< "| ently relatively basic. Development will continu-|" << std::endl
-			<< "| e in the future!                                 |" << std::endl
+			<< "| Music has Discord integration! (But this is      |" << std::endl
+			<< "| currently relatively basic. Development will     |" << std::endl
+			<< "| continue in the future!                          |" << std::endl
 			<< "|                                                  |" << std::endl
 			<< "| V. Credits                                       |" << std::endl
 			<< "|                                                  |" << std::endl
@@ -292,8 +283,8 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 			<< "----------------------------------------------------" << std::endl
 			<< "                                                    " << std::endl
 			<< "                [ E S C ] Go back                   " << std::endl;
-		helpPainted = true;
-		return "nop"; // :)
+		ishelp = true;
+		return "pauseplay";
 	}
 	if (!ishelp) { // Don't paint the main player if the help dialog is painted
 		SetConsoleCursorPosition(console, { 0, 0 });
