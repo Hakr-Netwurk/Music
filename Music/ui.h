@@ -295,6 +295,12 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		helpPainted = true;
 		return "nop"; // :)
 	}
+
+	CONSOLE_CURSOR_INFO cursorinfo;
+	GetConsoleCursorInfo(console, &cursorinfo);
+	cursorinfo.bVisible = false; // make cursor invisible so it doesnt flash
+	SetConsoleCursorInfo(console, &cursorinfo);
+
 	if (!ishelp) { // Don't paint the main player if the help dialog is painted
 		SetConsoleCursorPosition(console, { 0, 0 });
 		color("light gray", "black");
@@ -386,10 +392,6 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		}
 		color("light gray", "black");
 		std::cout << "       ";
-		CONSOLE_CURSOR_INFO cursorinfo;
-		GetConsoleCursorInfo(console, &cursorinfo);
-		cursorinfo.bVisible = false; // make cursor invisible so it doesnt flash
-		SetConsoleCursorInfo(console, &cursorinfo);
 		color("light gray", "black"); // reset text color
 		return selected; // return the new selected
 	}
