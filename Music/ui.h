@@ -5,6 +5,8 @@
 
 HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 bool isvolume = false;
+bool ishelp = false; // If I am ON the help screen (or need to be ON it)
+bool helpPainted = false; // Additional bool to prevent infinite repaint of help screen (flashing, ugh)
 extern int next = -1, foldernum = -1;
 extern std::vector<int> volumes = {};
 extern std::wstring name = L"", path = L"";
@@ -98,6 +100,10 @@ std::pair<int, int> getcurrentlocation(std::string str) // get location of strin
 	{
 		return std::make_pair(3, 5);
 	}
+	// PATCH: NOP for help
+	if (str == "nop") {
+		return std::make_pair(-1, -1);
+	}
 }
 
 /*PROTOTYPE LAYOUT
@@ -124,6 +130,10 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		{ "null", "help", "prev", "pauseplay", "next", "volume", "null" },
 		{ "null", "null", "null", "null", "null", "null", "null" }
 	};
+	if (location == std::pair(-1, -1)) {
+		// Just return "nop" again. Hang here!
+		return "nop";
+	}
 	// position selected accordingly
 	if (action == "up")
 	{
@@ -146,11 +156,20 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		selected = "pauseplay";
 		isvolume = true;
 	}
+	else if (action == "help") {
+		ishelp = true;
+	}
 
 	if (action == "back") // reset ui
 	{
 		selected = "pauseplay";
 		isvolume = false;
+		// This is for if we came back from the help screen.
+		if (ishelp) {
+			system("CLS");
+			ishelp = false;
+			helpPainted = false;
+		}
 	}
 	// for out of bounds, or updatedisplay without user input
 	if (action == "null" || selected == "null")
@@ -214,100 +233,167 @@ std::string updatedisplay(std::string action, std::pair<int, int> location, std:
 		}
 		SetCurrentDirectoryW(path.c_str());
 	}
-	SetConsoleCursorPosition(console, { 0, 0 });
-	color("light gray", "black");
-	if (selected == "menu") // if the selected is the menu, invert the colors to show it's selected
-	{
-		color("black", "light gray");
+
+	// Help dialog painting
+	if (ishelp && !helpPainted) {
+		system("CLS");
+		// Get ready for... ShItTy cOdE!
+		std::cout << "----------------------------------------------------" << std::endl
+			<< "|                   Music: Help                    |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| I. Introduction                                  |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "|  supsm/music is a lightweight, fast CLI-based mu-|" << std::endl
+			<< "| sic player. It contains a relatively simple TUI, |" << std::endl
+			<< "| used as the main control interface.              |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| II. The Interface                                |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| " << char(240) << " (1)                                            |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| Title of Song File                               |" << std::endl
+			<< "| [                    ] 00:00/04:00  (2)          |" << std::endl
+			<< "| ? (3)    << (4)   |> (5)   >> (6)    ↔ (7)       |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| (1): Menu icon (does nothing atm)                |" << std::endl
+			<< "| (2): Progress bar. It will fill up with dashes as|" << std::endl
+			<< "| you progress through the song.                   |" << std::endl
+			<< "| (3): Help. Select it to bring up this dia-       |" << std::endl
+			<< "| log box. (Not to be confused with a cry for help)|" << std::endl
+			<< "| (4): Previous. (Do I really need to explain??)   |" << std::endl
+			<< "| (5): Play/Pause. Go figure! [SPACE]              |" << std::endl
+			<< "| (6): Huh... I wonder what it could be...?        |" << std::endl
+			<< "| (7): Additional options. Currently serves to adj-|" << std::endl
+			<< "| ust volume. With the volume slider selected, use |" << std::endl
+			<< "| the arrow keys. Press *ESC* when you're done,    |" << std::endl
+			<< "| it's a bug.                                      |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| Select things using the arrow keys. Hit enter to |" << std::endl
+			<< "| \"activate\" them.                                 |" << std::endl // IDK why, there's a strange gap here that requires extra space
+			<< "|                                                  |" << std::endl
+			<< "| III. General Usage                               |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| Upon first boot, or when the \"path\" file is del- |" << std::endl // Here too
+			<< "|  eted, the program will prompt you for your music|" << std::endl
+			<< "| location. Afterwards, refer to the above section |" << std::endl
+			<< "| to naviagte the interface.                       |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| IV. Misc                                         |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| Music has Discord integration! (But this is curr-|" << std::endl
+			<< "| ently relatively basic. Development will continu-|" << std::endl
+			<< "| e in the future!                                 |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| V. Credits                                       |" << std::endl
+			<< "|                                                  |" << std::endl
+			<< "| The following people helped make Music:          |" << std::endl
+			<< "| - supsm (main dev)                               |" << std::endl
+			<< "| - Vbbab (helper & secondary dev)                 |" << std::endl
+			<< "----------------------------------------------------" << std::endl
+			<< "                                                    " << std::endl
+			<< "                [ E S C ] Go back                   " << std::endl;
+		helpPainted = true;
+		return "nop"; // :)
 	}
-	std::cout << char(240); // menu character
-	color("light gray", "black");
-	std::cout << std::endl << std::endl << narrowname << std::endl;
-	if (selected == "progbar")
-	{
-		color("black", "light gray");
-	}
-	std::cout << '[';
-	for (int i = 0; i < numbars; i++)
-	{
-		std::cout << '-';
-	}
-	for (int i = numbars; i < 20; i++) // fill the rest with space
-	{
-		std::cout << ' ';
-	}
-	std::cout << ']';
-	std::cout << ' ' << formattime(elapsed) << '/' << formattime(total);
-	color("light gray", "black");
-	std::cout << std::endl;
-	if (!isvolume)
-	{
-		if (selected == "help")
-		{
-			color("black", "light gray");
-		}
-		std::cout << "?";
+	if (!ishelp) { // Don't paint the main player if the help dialog is painted
+		SetConsoleCursorPosition(console, { 0, 0 });
 		color("light gray", "black");
-		std::cout << "    ";
-		if (selected == "prev")
+		if (selected == "menu") // if the selected is the menu, invert the colors to show it's selected
 		{
 			color("black", "light gray");
 		}
-		std::cout << "<<";
+		std::cout << char(240); // menu character
 		color("light gray", "black");
-		std::cout << "   ";
-		if (selected == "pauseplay")
+		std::cout << std::endl << std::endl << narrowname << std::endl;
+		if (selected == "progbar")
 		{
 			color("black", "light gray");
 		}
-		if (paused)
+		std::cout << '[';
+		for (int i = 0; i < numbars; i++)
 		{
-			std::cout << "|>";
+			std::cout << '-';
+		}
+		for (int i = numbars; i < 20; i++) // fill the rest with space
+		{
+			std::cout << ' ';
+		}
+		std::cout << ']';
+		std::cout << ' ' << formattime(elapsed) << '/' << formattime(total);
+		color("light gray", "black");
+		std::cout << std::endl;
+		if (!isvolume)
+		{
+			if (selected == "help")
+			{
+				color("black", "light gray");
+			}
+			std::cout << "?";
+			color("light gray", "black");
+			std::cout << "    ";
+			if (selected == "prev")
+			{
+				color("black", "light gray");
+			}
+			std::cout << "<<";
+			color("light gray", "black");
+			std::cout << "   ";
+			if (selected == "pauseplay")
+			{
+				color("black", "light gray");
+			}
+			if (paused)
+			{
+				std::cout << "|>";
+			}
+			else
+			{
+				std::cout << "||";
+			}
+			color("light gray", "black");
+			std::cout << "   ";
+			if (selected == "next")
+			{
+				color("black", "light gray");
+			}
+			std::cout << ">>";
+			color("light gray", "black");
+			std::cout << "    ";
+			if (selected == "volume")
+			{
+				color("black", "light gray");
+			}
+			std::cout << char(29);
 		}
 		else
 		{
-			std::cout << "||";
+			std::cout << "Volume ";
+			if (selected == "pauseplay")
+			{
+				color("black", "light gray");
+			}
+			std::cout << '<';
+			for (int i = 1; i < volumes[next] / 5; i++)
+			{
+				std::cout << '-';
+			}
+			std::cout << 'o';
+			for (int i = volumes[next] / 5; i < 20; i++)
+			{
+				std::cout << '-';
+			}
+			std::cout << '>';
 		}
 		color("light gray", "black");
-		std::cout << "   ";
-		if (selected == "next")
-		{
-			color("black", "light gray");
-		}
-		std::cout << ">>";
-		color("light gray", "black");
-		std::cout << "    ";
-		if (selected == "volume")
-		{
-			color("black", "light gray");
-		}
-		std::cout << char(29);
+		std::cout << "       ";
+		CONSOLE_CURSOR_INFO cursorinfo;
+		GetConsoleCursorInfo(console, &cursorinfo);
+		cursorinfo.bVisible = false; // make cursor invisible so it doesnt flash
+		SetConsoleCursorInfo(console, &cursorinfo);
+		color("light gray", "black"); // reset text color
+		return selected; // return the new selected
 	}
-	else
-	{
-		std::cout << "Volume ";
-		if (selected == "pauseplay")
-		{
-			color("black", "light gray");
-		}
-		std::cout << '<';
-		for (int i = 1; i < volumes[next] / 5; i++)
-		{
-			std::cout << '-';
-		}
-		std::cout << 'o';
-		for (int i = volumes[next] / 5; i < 20; i++)
-		{
-			std::cout << '-';
-		}
-		std::cout << '>';
+	else {
+		return "pauseplay"; // ignored?
 	}
-	color("light gray", "black");
-	std::cout << "       ";
-	CONSOLE_CURSOR_INFO cursorinfo;
-	GetConsoleCursorInfo(console, &cursorinfo);
-	cursorinfo.bVisible = false; // make cursor invisible so it doesnt flash
-	SetConsoleCursorInfo(console, &cursorinfo);
-	color("light gray", "black"); // reset text color
-	return selected; // return the new selected
 }

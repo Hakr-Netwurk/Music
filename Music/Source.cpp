@@ -468,6 +468,7 @@ playing_start:
 	{
 		startdiscord();
 	}
+	//////// MAIN LOOP ////////
 	while (true)
 	{
 		shuffle(curlist, n);
@@ -760,6 +761,7 @@ playing_start:
 						// in the if (action == "back"), add ishelp = false;
 						// do some testing, add spaces to end of cout if necessary
 						// you can check out how i did volume
+						updatedisplay("help", getcurrentlocation(location), name, lastbar, true, paused, lastsec, info.durationInSeconds);
 					}
 					else if (location == "menu")
 					{
